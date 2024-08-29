@@ -1,0 +1,29 @@
+{
+	"name": "bun",
+	"module": "index.ts",
+	"type": "module",
+	"devDependencies": {
+		"@types/bun": "latest",
+		"@types/pg": "^8.11.6",
+		"drizzle-kit": "^0.24.1"
+	},
+	"peerDependencies": {
+		"typescript": "^5.0.0"
+	},
+	"dependencies": {
+		"drizzle-orm": "^0.33.0",
+		"hono": "^4.5.8",
+		"pg": "^8.12.0",
+		"postgres": "^3.4.4"
+	},
+	"scripts": {
+		"dev": "bun --watch src/index.ts",
+		"generate": "drizzle-kit generate",
+		"migrate": "drizzle-kit migrate",
+		"push": "drizzle-kit push",
+		"db:seed": "bun run ./src/db/seed.ts",
+		"format": "bunx @biomejs/biome format ./src --write",
+		"lint": "bunx @biomejs/biome lint ./src",
+		"start": "bun run src/index.ts"
+	}
+}
