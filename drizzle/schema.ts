@@ -1,3 +1,4 @@
+import { int } from 'drizzle-orm/mysql-core'
 import {
 	pgTable,
 	foreignKey,
@@ -8,8 +9,8 @@ import {
 	time,
 	unique,
 	timestamp,
+	boolean,
 } from 'drizzle-orm/pg-core'
-import { sql } from 'drizzle-orm'
 
 export const players = pgTable(
 	'players',
@@ -121,6 +122,9 @@ export const stadiums = pgTable(
 		// You can use { mode: "bigint" } if numbers are exceeding js number limitations
 		locationId: bigint('location_id', { mode: 'number' }),
 		link: text('link'),
+		city: text('city'),
+		state: text('state'),
+		country: text('country'),
 	},
 	(table) => {
 		return {
@@ -323,6 +327,11 @@ export const games = pgTable(
 		tvNetwork: text('tv_network'),
 		// You can use { mode: "bigint" } if numbers are exceeding js number limitations
 		winnerId: bigint('winner_id', { mode: 'number' }),
+		rivalry: boolean('rivalry'),
+		watch: integer('watch'),
+		sicko: integer('sicko'),
+		fire: integer('fire'),
+		upset: integer('upset'),
 	},
 	(table) => {
 		return {
