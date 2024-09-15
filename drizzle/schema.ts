@@ -1,4 +1,3 @@
-import { int } from 'drizzle-orm/mysql-core'
 import {
 	pgTable,
 	foreignKey,
@@ -11,6 +10,7 @@ import {
 	timestamp,
 	boolean,
 } from 'drizzle-orm/pg-core'
+import { sql } from 'drizzle-orm'
 
 export const players = pgTable(
 	'players',
@@ -180,6 +180,7 @@ export const teams = pgTable(
 		conferenceId: bigint('conference_id', { mode: 'number' }),
 		// You can use { mode: "bigint" } if numbers are exceeding js number limitations
 		stadiumId: bigint('stadium_id', { mode: 'number' }),
+		location: text('location'),
 		icon: text('icon'),
 		apRank: integer('ap_rank'),
 		coachesRank: integer('coaches_rank'),
@@ -187,6 +188,10 @@ export const teams = pgTable(
 		primaryColor: text('primary_color'),
 		secondaryColor: text('secondary_color'),
 		gamesPlayed: integer('games_played'),
+		rivals: text('rivals')
+			.array()
+			.notNull()
+			.default(sql`ARRAY[]::text[]`),
 	},
 	(table) => {
 		return {
@@ -320,9 +325,11 @@ export const games = pgTable(
 		awayTeamScore: integer('away_team_score'),
 		// You can use { mode: "bigint" } if numbers are exceeding js number limitations
 		stadiumId: bigint('stadium_id', { mode: 'number' }),
+		location: text('location'),
 		// You can use { mode: "bigint" } if numbers are exceeding js number limitations
 		seasonId: bigint('season_id', { mode: 'number' }),
 		gameTime: time('game_time'),
+		week: integer('week'),
 		type: text('type'),
 		tvNetwork: text('tv_network'),
 		// You can use { mode: "bigint" } if numbers are exceeding js number limitations
@@ -332,6 +339,7 @@ export const games = pgTable(
 		sicko: integer('sicko'),
 		fire: integer('fire'),
 		upset: integer('upset'),
+		interestScore: integer('interest_score'),
 	},
 	(table) => {
 		return {
@@ -428,6 +436,43 @@ export const userfavoriteteams = pgTable(
 				columns: [table.teamId],
 				foreignColumns: [teams.id],
 				name: 'userfavoriteteams_team_id_fkey',
+			}),
+		}
+	}
+)
+
+export const interactions = pgTable(
+	'interactions',
+	{
+		id: bigint('id', { mode: 'number' })
+			.primaryKey()
+			.generatedAlwaysAsIdentity({
+				name: 'interactions_id_seq',
+				startWith: 1,
+				increment: 1,
+				minValue: 1,
+				maxValue: 9223372036850000000,
+				cache: 1,
+			}),
+		userId: bigint('user_id', { mode: 'number' }),
+		gameId: bigint('game_id', { mode: 'number' }),
+		interactionType: text('interaction_type'),
+		createdAt: timestamp('created_at', {
+			withTimezone: true,
+			mode: 'string',
+		}).defaultNow(),
+	},
+	(table) => {
+		return {
+			// interactionsUserIdFkey: foreignKey({
+			// 	columns: [table.userId],
+			// 	foreignColumns: [users.id],
+			// 	name: 'interactions_user_id_fkey',
+			// }),
+			interactionsGameIdFkey: foreignKey({
+				columns: [table.gameId],
+				foreignColumns: [games.id],
+				name: 'interactions_game_id_fkey',
 			}),
 		}
 	}

@@ -1,5 +1,5 @@
 {
-  "id": "d0f04a7e-17b2-4a9a-a99d-90f15b116e5d",
+  "id": "17f048e5-d093-497b-9498-ddc06768358f",
   "prevId": "4f69043b-44e4-4d48-b6f3-c190196e6bda",
   "version": "7",
   "dialect": "postgresql",
@@ -165,6 +165,12 @@
           "primaryKey": false,
           "notNull": false
         },
+        "location": {
+          "name": "location",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
         "season_id": {
           "name": "season_id",
           "type": "bigint",
@@ -174,6 +180,12 @@
         "game_time": {
           "name": "game_time",
           "type": "time",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "week": {
+          "name": "week",
+          "type": "integer",
           "primaryKey": false,
           "notNull": false
         },
@@ -221,6 +233,12 @@
         },
         "upset": {
           "name": "upset",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "interest_score": {
+          "name": "interest_score",
           "type": "integer",
           "primaryKey": false,
           "notNull": false
@@ -406,6 +424,85 @@
           "tableTo": "teams",
           "columnsFrom": [
             "team_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "no action",
+          "onUpdate": "no action"
+        }
+      },
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {}
+    },
+    "public.interactions": {
+      "name": "interactions",
+      "schema": "",
+      "columns": {
+        "id": {
+          "name": "id",
+          "type": "bigint",
+          "primaryKey": true,
+          "notNull": true,
+          "identity": {
+            "type": "always",
+            "name": "interactions_id_seq",
+            "schema": "public",
+            "increment": "1",
+            "startWith": "1",
+            "minValue": "1",
+            "maxValue": "9223372036850000000",
+            "cache": "1",
+            "cycle": false
+          }
+        },
+        "user_id": {
+          "name": "user_id",
+          "type": "bigint",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "game_id": {
+          "name": "game_id",
+          "type": "bigint",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "interaction_type": {
+          "name": "interaction_type",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "created_at": {
+          "name": "created_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": false,
+          "default": "now()"
+        }
+      },
+      "indexes": {},
+      "foreignKeys": {
+        "interactions_user_id_fkey": {
+          "name": "interactions_user_id_fkey",
+          "tableFrom": "interactions",
+          "tableTo": "users",
+          "columnsFrom": [
+            "user_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "no action",
+          "onUpdate": "no action"
+        },
+        "interactions_game_id_fkey": {
+          "name": "interactions_game_id_fkey",
+          "tableFrom": "interactions",
+          "tableTo": "games",
+          "columnsFrom": [
+            "game_id"
           ],
           "columnsTo": [
             "id"
@@ -739,6 +836,12 @@
         "stadium_id": {
           "name": "stadium_id",
           "type": "bigint",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "location": {
+          "name": "location",
+          "type": "text",
           "primaryKey": false,
           "notNull": false
         },
