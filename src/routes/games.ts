@@ -1,6 +1,6 @@
 import { Hono } from 'hono'
 import * as schema from '../../drizzle/schema'
-import { asc, eq, gte, lte } from 'drizzle-orm'
+import { asc, eq, gte, lte, desc, or } from 'drizzle-orm'
 
 const games = new Hono()
 
@@ -13,6 +13,7 @@ games.get('/', async (c) => {
 				team_awayTeamId: true,
 				interactions: true,
 			},
+			orderBy: (games, { desc }) => [desc(games.interestScore)],
 		})
 		// console.log(result)
 		return c.json(result)
@@ -64,13 +65,13 @@ games.delete('/:id', async (c) => {
 // })
 
 games.get('/:id/interactions', async (c) => {
-	console.log('getting interactions', c.req.param('id'))
+	// console.log('getting interactions', c.req.param('id'))
 	const db = c.get('db')
 	const result = await db.query.interactions.findMany({
 		where: (interactions, { eq }) =>
 			eq(interactions.gameId, Number.parseInt(c.req.param('id'))),
 	})
-	console.log('result', result)
+	// console.log('result', result)
 	return c.json(result)
 })
 
@@ -117,6 +118,39 @@ games.get('/week/:week', async (c) => {
 		},
 	})
 	return c.json(result)
+})
+
+games.get('/team/:slug', async (c) => {
+	const slug = c.req.param('slug')
+	console.log('slug', slug)
+	const db = c.get('db')
+
+	try {
+		const id = await db
+			.select()
+			.from(schema.teams)
+			.where(eq(schema.teams.name, slug))
+
+		console.log('id', id[0].id)
+
+		const result = await db.query.games.findMany({
+			where: (games, { eq }) =>
+				or(eq(games.homeTeamId, id[0].id), eq(games.awayTeamId, id[0].id)),
+			with: {
+				team_homeTeamId: true,
+				team_awayTeamId: true,
+				interactions: true,
+			},
+			orderBy: [asc(schema.games.gameDate)],
+		})
+
+		console.log(typeof result)
+		console.log('result', result)
+		return c.json(result)
+	} catch (error) {
+		console.error(error)
+		return c.json({ error: 'Internal Server Error' }, 500)
+	}
 })
 
 export default games

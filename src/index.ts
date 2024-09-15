@@ -10,6 +10,7 @@ import teams from './routes/teams'
 import games from './routes/games'
 import conferences from './routes/conferences'
 import interactions from './routes/interactions'
+import cron from './routes/cron'
 
 const client = new Client({
 	connectionString:
@@ -44,6 +45,7 @@ app.route('/teams', teams)
 app.route('/games', games)
 app.route('/conferences', conferences)
 app.route('/interactions', interactions)
+app.route('/cron', cron)
 
 // Custom Not Found Message
 app.notFound((c) => {

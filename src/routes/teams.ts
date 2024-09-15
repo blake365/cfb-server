@@ -30,6 +30,20 @@ teams.get('/:id', async (c) => {
 	return c.json(result)
 })
 
+teams.get('/name/:name', async (c) => {
+	const db = c.get('db')
+	const name = c.req.param('name')
+	console.log(name)
+	const result = await db.query.teams.findFirst({
+		where: (teams, { eq }) => eq(teams.name, name),
+		with: {
+			conference: true,
+			teamstats: true,
+		},
+	})
+	return c.json(result)
+})
+
 teams.put('/:id', async (c) => {
 	const db = c.get('db')
 	const body = await c.req.json()

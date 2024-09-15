@@ -44,4 +44,14 @@ conferences.post('/', async (c) => {
 	return c.json(result)
 })
 
+// get games in a conference based on conference name
+// conferences.get('/games/:name', async (c) => {
+// 	const db = c.get('db')
+// 	const name = c.req.param('name')
+// 	const result = await db.query.games.findMany({
+// 		where: (games, { eq }) => eq(games.conference, name),
+// 	})
+// 	return c.json(result)
+// })
+
 export default conferences

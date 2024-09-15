@@ -12,14 +12,14 @@ function generateUserId(ip: string) {
 }
 
 interactions.post('/:gameId', async (c) => {
-	console.log('interactions.post')
+	// console.log('interactions.post')
 	const db = c.get('db')
 	const gameId = Number(c.req.param('gameId'))
-	console.log('gameId', gameId)
+	// console.log('gameId', gameId)
 	const { interactionType } = await c.req.json()
 	const ip = c.req.header('x-forwarded-for')
 	const userId = generateUserId(ip)
-	console.log('userId', userId)
+	// console.log('userId', userId)
 	// console.log('createdAt', schema.interactions.createdAt)
 
 	const recentInteractions = await db
@@ -35,7 +35,7 @@ interactions.post('/:gameId', async (c) => {
 		.orderBy(desc(schema.interactions.createdAt))
 		.limit(1)
 
-	console.log('recentInteractions', recentInteractions)
+	// console.log('recentInteractions', recentInteractions)
 
 	if (recentInteractions.length >= 1) {
 		const mostRecentInteraction = recentInteractions[0]
