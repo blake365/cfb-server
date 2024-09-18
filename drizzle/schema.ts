@@ -1,153 +1,28 @@
 import {
 	pgTable,
 	foreignKey,
-	bigint,
 	text,
 	integer,
-	date,
-	time,
-	unique,
+	bigint,
 	timestamp,
 	boolean,
+	serial,
 } from 'drizzle-orm/pg-core'
 import { sql } from 'drizzle-orm'
 
-export const players = pgTable(
-	'players',
-	{
-		// You can use { mode: "bigint" } if numbers are exceeding js number limitations
-		id: bigint('id', { mode: 'number' })
-			.primaryKey()
-			.generatedAlwaysAsIdentity({
-				name: 'players_id_seq',
-				startWith: 1,
-				increment: 1,
-				minValue: 1,
-				maxValue: 9223372036850000000,
-				cache: 1,
-			}),
-		// You can use { mode: "bigint" } if numbers are exceeding js number limitations
-		teamId: bigint('team_id', { mode: 'number' }),
-		name: text('name').notNull(),
-		position: text('position'),
-		jerseyNumber: integer('jersey_number'),
-		year: text('year'),
-	},
-	(table) => {
-		return {
-			playersTeamIdFkey: foreignKey({
-				columns: [table.teamId],
-				foreignColumns: [teams.id],
-				name: 'players_team_id_fkey',
-			}),
-		}
-	}
-)
-
-export const coaches = pgTable(
-	'coaches',
-	{
-		// You can use { mode: "bigint" } if numbers are exceeding js number limitations
-		id: bigint('id', { mode: 'number' })
-			.primaryKey()
-			.generatedAlwaysAsIdentity({
-				name: 'coaches_id_seq',
-				startWith: 1,
-				increment: 1,
-				minValue: 1,
-				maxValue: 9223372036850000000,
-				cache: 1,
-			}),
-		// You can use { mode: "bigint" } if numbers are exceeding js number limitations
-		teamId: bigint('team_id', { mode: 'number' }),
-		name: text('name').notNull(),
-		role: text('role'),
-	},
-	(table) => {
-		return {
-			coachesTeamIdFkey: foreignKey({
-				columns: [table.teamId],
-				foreignColumns: [teams.id],
-				name: 'coaches_team_id_fkey',
-			}),
-		}
-	}
-)
-
-export const locations = pgTable('locations', {
-	// You can use { mode: "bigint" } if numbers are exceeding js number limitations
-	id: bigint('id', { mode: 'number' }).primaryKey().generatedAlwaysAsIdentity({
-		name: 'locations_id_seq',
-		startWith: 1,
-		increment: 1,
-		minValue: 1,
-		maxValue: 9223372036850000000,
-		cache: 1,
-	}),
-	city: text('city').notNull(),
-	state: text('state'),
-	country: text('country'),
-})
-
 export const seasons = pgTable('seasons', {
-	// You can use { mode: "bigint" } if numbers are exceeding js number limitations
-	id: bigint('id', { mode: 'number' }).primaryKey().generatedAlwaysAsIdentity({
-		name: 'seasons_id_seq',
-		startWith: 1,
-		increment: 1,
-		minValue: 1,
-		maxValue: 9223372036850000000,
-		cache: 1,
-	}),
+	id: serial('id').primaryKey(),
 	year: integer('year').notNull(),
 	name: text('name'),
 })
 
-export const stadiums = pgTable(
-	'stadiums',
-	{
-		// You can use { mode: "bigint" } if numbers are exceeding js number limitations
-		id: bigint('id', { mode: 'number' })
-			.primaryKey()
-			.generatedAlwaysAsIdentity({
-				name: 'stadiums_id_seq',
-				startWith: 1,
-				increment: 1,
-				minValue: 1,
-				maxValue: 9223372036850000000,
-				cache: 1,
-			}),
-		name: text('name').notNull(),
-		capacity: integer('capacity'),
-		// You can use { mode: "bigint" } if numbers are exceeding js number limitations
-		locationId: bigint('location_id', { mode: 'number' }),
-		link: text('link'),
-		city: text('city'),
-		state: text('state'),
-		country: text('country'),
-	},
-	(table) => {
-		return {
-			stadiumsLocationIdFkey: foreignKey({
-				columns: [table.locationId],
-				foreignColumns: [locations.id],
-				name: 'stadiums_location_id_fkey',
-			}),
-		}
-	}
-)
-
 export const conferences = pgTable('conferences', {
-	// You can use { mode: "bigint" } if numbers are exceeding js number limitations
-	id: bigint('id', { mode: 'number' }).primaryKey().generatedAlwaysAsIdentity({
-		name: 'conferences_id_seq',
-		startWith: 1,
-		increment: 1,
-		minValue: 1,
-		maxValue: 9223372036850000000,
-		cache: 1,
-	}),
+	id: serial('id').primaryKey(),
+	cfbApiId: integer('cfb_api_id'),
 	name: text('name').notNull(),
+	fullName: text('full_name'),
+	abbreviation: text('abbreviation'),
+	classification: text('classification'),
 	division: text('division'),
 	icon: text('icon'),
 })
@@ -155,39 +30,32 @@ export const conferences = pgTable('conferences', {
 export const teams = pgTable(
 	'teams',
 	{
-		// You can use { mode: "bigint" } if numbers are exceeding js number limitations
-		id: bigint('id', { mode: 'number' })
-			.primaryKey()
-			.generatedAlwaysAsIdentity({
-				name: 'teams_id_seq',
-				startWith: 1,
-				increment: 1,
-				minValue: 1,
-				maxValue: 9223372036850000000,
-				cache: 1,
-			}),
-		name: text('name').notNull().unique(),
+		id: serial('id').unique(),
+		cfbApiId: integer('cfb_api_id').primaryKey(),
+		name: text('name').notNull(),
 		abbreviation: text('abbreviation'),
 		mascot: text('mascot'),
 		wins: integer('wins'),
 		losses: integer('losses'),
 		ties: integer('ties'),
+		conferenceWins: integer('conference_wins'),
+		conferenceLosses: integer('conference_losses'),
+		conferenceTies: integer('conference_ties'),
 		headCoach: text('head_coach'),
 		establishedYear: integer('established_year'),
-		// You can use { mode: "bigint" } if numbers are exceeding js number limitations
-		seasonId: bigint('season_id', { mode: 'number' }),
-		// You can use { mode: "bigint" } if numbers are exceeding js number limitations
-		conferenceId: bigint('conference_id', { mode: 'number' }),
-		// You can use { mode: "bigint" } if numbers are exceeding js number limitations
-		stadiumId: bigint('stadium_id', { mode: 'number' }),
+		seasonId: serial('season_id'),
+		conferenceId: serial('conference_id'),
+		stadiumId: serial('stadium_id'),
 		location: text('location'),
 		icon: text('icon'),
+		logo: text('logo'),
 		apRank: integer('ap_rank'),
 		coachesRank: integer('coaches_rank'),
 		cfpRank: integer('cfp_rank'),
 		primaryColor: text('primary_color'),
 		secondaryColor: text('secondary_color'),
 		gamesPlayed: integer('games_played'),
+		division: text('division'),
 		rivals: text('rivals')
 			.array()
 			.notNull()
@@ -205,11 +73,6 @@ export const teams = pgTable(
 				foreignColumns: [conferences.id],
 				name: 'teams_conference_id_fkey',
 			}),
-			teamsStadiumIdFkey: foreignKey({
-				columns: [table.stadiumId],
-				foreignColumns: [stadiums.id],
-				name: 'teams_stadium_id_fkey',
-			}),
 		}
 	}
 )
@@ -217,21 +80,9 @@ export const teams = pgTable(
 export const teamstats = pgTable(
 	'teamstats',
 	{
-		// You can use { mode: "bigint" } if numbers are exceeding js number limitations
-		id: bigint('id', { mode: 'number' })
-			.primaryKey()
-			.generatedAlwaysAsIdentity({
-				name: 'teamstats_id_seq',
-				startWith: 1,
-				increment: 1,
-				minValue: 1,
-				maxValue: 9223372036850000000,
-				cache: 1,
-			}),
-		// You can use { mode: "bigint" } if numbers are exceeding js number limitations
-		teamId: bigint('team_id', { mode: 'number' }),
-		// You can use { mode: "bigint" } if numbers are exceeding js number limitations
-		seasonId: bigint('season_id', { mode: 'number' }),
+		id: serial('id').primaryKey(),
+		teamId: integer('team_id'),
+		seasonId: serial('season_id'),
 		passingYards: integer('passing_yards'),
 		rushingYards: integer('rushing_yards'),
 		turnovers: integer('turnovers'),
@@ -246,7 +97,7 @@ export const teamstats = pgTable(
 		return {
 			teamstatsTeamIdFkey: foreignKey({
 				columns: [table.teamId],
-				foreignColumns: [teams.id],
+				foreignColumns: [teams.cfbApiId],
 				name: 'teamstats_team_id_fkey',
 			}),
 			teamstatsSeasonIdFkey: foreignKey({
@@ -261,21 +112,9 @@ export const teamstats = pgTable(
 export const gamestats = pgTable(
 	'gamestats',
 	{
-		// You can use { mode: "bigint" } if numbers are exceeding js number limitations
-		id: bigint('id', { mode: 'number' })
-			.primaryKey()
-			.generatedAlwaysAsIdentity({
-				name: 'gamestats_id_seq',
-				startWith: 1,
-				increment: 1,
-				minValue: 1,
-				maxValue: 9223372036850000000,
-				cache: 1,
-			}),
-		// You can use { mode: "bigint" } if numbers are exceeding js number limitations
-		gameId: bigint('game_id', { mode: 'number' }),
-		// You can use { mode: "bigint" } if numbers are exceeding js number limitations
-		teamId: bigint('team_id', { mode: 'number' }),
+		id: serial('id').primaryKey(),
+		gameId: serial('game_id'),
+		teamId: integer('team_id'),
 		passingYards: integer('passing_yards'),
 		rushingYards: integer('rushing_yards'),
 		turnovers: integer('turnovers'),
@@ -295,7 +134,7 @@ export const gamestats = pgTable(
 			}),
 			gamestatsTeamIdFkey: foreignKey({
 				columns: [table.teamId],
-				foreignColumns: [teams.id],
+				foreignColumns: [teams.cfbApiId],
 				name: 'gamestats_team_id_fkey',
 			}),
 		}
@@ -305,137 +144,41 @@ export const gamestats = pgTable(
 export const games = pgTable(
 	'games',
 	{
-		// You can use { mode: "bigint" } if numbers are exceeding js number limitations
-		id: bigint('id', { mode: 'number' })
-			.primaryKey()
-			.generatedAlwaysAsIdentity({
-				name: 'games_id_seq',
-				startWith: 1,
-				increment: 1,
-				minValue: 1,
-				maxValue: 9223372036850000000,
-				cache: 1,
-			}),
-		// You can use { mode: "bigint" } if numbers are exceeding js number limitations
-		homeTeamId: bigint('home_team_id', { mode: 'number' }),
-		// You can use { mode: "bigint" } if numbers are exceeding js number limitations
-		awayTeamId: bigint('away_team_id', { mode: 'number' }),
-		gameDate: date('game_date').notNull(),
+		id: serial('id').primaryKey(),
+		cfbApiId: integer('cfb_api_id'),
+		homeTeamId: integer('home_team_id'),
+		awayTeamId: integer('away_team_id'),
+		gameStart: timestamp('game_start', {
+			withTimezone: true,
+			mode: 'string',
+		}),
 		homeTeamScore: integer('home_team_score'),
 		awayTeamScore: integer('away_team_score'),
-		// You can use { mode: "bigint" } if numbers are exceeding js number limitations
-		stadiumId: bigint('stadium_id', { mode: 'number' }),
+		stadiumId: serial('stadium_id'),
 		location: text('location'),
-		// You can use { mode: "bigint" } if numbers are exceeding js number limitations
-		seasonId: bigint('season_id', { mode: 'number' }),
-		gameTime: time('game_time'),
+		seasonId: serial('season_id'),
 		week: integer('week'),
 		type: text('type'),
 		tvNetwork: text('tv_network'),
-		// You can use { mode: "bigint" } if numbers are exceeding js number limitations
-		winnerId: bigint('winner_id', { mode: 'number' }),
-		rivalry: boolean('rivalry'),
-		watch: integer('watch'),
-		sicko: integer('sicko'),
-		fire: integer('fire'),
-		upset: integer('upset'),
-		interestScore: integer('interest_score'),
+		rivalry: boolean('rivalry').default(false),
+		interestScore: integer('interest_score').default(40),
 	},
 	(table) => {
 		return {
 			gamesHomeTeamIdFkey: foreignKey({
 				columns: [table.homeTeamId],
-				foreignColumns: [teams.id],
+				foreignColumns: [teams.cfbApiId],
 				name: 'games_home_team_id_fkey',
 			}),
 			gamesAwayTeamIdFkey: foreignKey({
 				columns: [table.awayTeamId],
-				foreignColumns: [teams.id],
+				foreignColumns: [teams.cfbApiId],
 				name: 'games_away_team_id_fkey',
-			}),
-			gamesStadiumIdFkey: foreignKey({
-				columns: [table.stadiumId],
-				foreignColumns: [stadiums.id],
-				name: 'games_stadium_id_fkey',
 			}),
 			gamesSeasonIdFkey: foreignKey({
 				columns: [table.seasonId],
 				foreignColumns: [seasons.id],
 				name: 'games_season_id_fkey',
-			}),
-			gamesWinnerIdFkey: foreignKey({
-				columns: [table.winnerId],
-				foreignColumns: [teams.id],
-				name: 'games_winner_id_fkey',
-			}),
-		}
-	}
-)
-
-export const users = pgTable(
-	'users',
-	{
-		// You can use { mode: "bigint" } if numbers are exceeding js number limitations
-		id: bigint('id', { mode: 'number' })
-			.primaryKey()
-			.generatedAlwaysAsIdentity({
-				name: 'users_id_seq',
-				startWith: 1,
-				increment: 1,
-				minValue: 1,
-				maxValue: 9223372036850000000,
-				cache: 1,
-			}),
-		username: text('username').notNull(),
-		email: text('email').notNull(),
-		passwordHash: text('password_hash').notNull(),
-		createdAt: timestamp('created_at', {
-			withTimezone: true,
-			mode: 'string',
-		}).defaultNow(),
-		updatedAt: timestamp('updated_at', {
-			withTimezone: true,
-			mode: 'string',
-		}).defaultNow(),
-	},
-	(table) => {
-		return {
-			usersUsernameKey: unique('users_username_key').on(table.username),
-			usersEmailKey: unique('users_email_key').on(table.email),
-		}
-	}
-)
-
-export const userfavoriteteams = pgTable(
-	'userfavoriteteams',
-	{
-		// You can use { mode: "bigint" } if numbers are exceeding js number limitations
-		id: bigint('id', { mode: 'number' })
-			.primaryKey()
-			.generatedAlwaysAsIdentity({
-				name: 'userfavoriteteams_id_seq',
-				startWith: 1,
-				increment: 1,
-				minValue: 1,
-				maxValue: 9223372036850000000,
-				cache: 1,
-			}),
-		// You can use { mode: "bigint" } if numbers are exceeding js number limitations
-		userId: bigint('user_id', { mode: 'number' }),
-		// You can use { mode: "bigint" } if numbers are exceeding js number limitations
-		teamId: bigint('team_id', { mode: 'number' }),
-	},
-	(table) => {
-		return {
-			userfavoriteteamsUserIdFkey: foreignKey({
-				columns: [table.userId],
-				foreignColumns: [users.id],
-				name: 'userfavoriteteams_user_id_fkey',
-			}),
-			userfavoriteteamsTeamIdFkey: foreignKey({
-				columns: [table.teamId],
-				foreignColumns: [teams.id],
-				name: 'userfavoriteteams_team_id_fkey',
 			}),
 		}
 	}
@@ -444,18 +187,9 @@ export const userfavoriteteams = pgTable(
 export const interactions = pgTable(
 	'interactions',
 	{
-		id: bigint('id', { mode: 'number' })
-			.primaryKey()
-			.generatedAlwaysAsIdentity({
-				name: 'interactions_id_seq',
-				startWith: 1,
-				increment: 1,
-				minValue: 1,
-				maxValue: 9223372036850000000,
-				cache: 1,
-			}),
-		userId: bigint('user_id', { mode: 'number' }),
-		gameId: bigint('game_id', { mode: 'number' }),
+		id: serial('id').primaryKey(),
+		userId: text('user_id'),
+		gameId: serial('game_id'),
 		interactionType: text('interaction_type'),
 		createdAt: timestamp('created_at', {
 			withTimezone: true,
@@ -464,11 +198,6 @@ export const interactions = pgTable(
 	},
 	(table) => {
 		return {
-			// interactionsUserIdFkey: foreignKey({
-			// 	columns: [table.userId],
-			// 	foreignColumns: [users.id],
-			// 	name: 'interactions_user_id_fkey',
-			// }),
 			interactionsGameIdFkey: foreignKey({
 				columns: [table.gameId],
 				foreignColumns: [games.id],

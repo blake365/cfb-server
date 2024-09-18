@@ -5,6 +5,6 @@ export default defineConfig({
 	out: './drizzle',
 	dialect: 'postgresql',
 	dbCredentials: {
-		url: 'postgresql://postgres:hokies@localhost:5432/collegefootball',
+		url: 'postgresql://postgres:hokies@localhost:5432/cfbSickos',
 	},
 })

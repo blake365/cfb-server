@@ -13,8 +13,7 @@ import interactions from './routes/interactions'
 import cron from './routes/cron'
 
 const client = new Client({
-	connectionString:
-		'postgresql://postgres:hokies@localhost:5432/collegefootball',
+	connectionString: 'postgresql://postgres:hokies@localhost:5432/cfbSickos',
 })
 
 await client.connect()

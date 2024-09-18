@@ -1,6 +1,6 @@
 import { Hono } from 'hono'
 import * as schema from '../../drizzle/schema'
-import { asc, eq, gte, lte, desc, or } from 'drizzle-orm'
+import { asc, eq, gt, count, desc, or, sql } from 'drizzle-orm'
 
 const games = new Hono()
 
@@ -14,6 +14,7 @@ games.get('/', async (c) => {
 				interactions: true,
 			},
 			orderBy: (games, { desc }) => [desc(games.interestScore)],
+			limit: 10,
 		})
 		// console.log(result)
 		return c.json(result)
@@ -135,13 +136,16 @@ games.get('/team/:slug', async (c) => {
 
 		const result = await db.query.games.findMany({
 			where: (games, { eq }) =>
-				or(eq(games.homeTeamId, id[0].id), eq(games.awayTeamId, id[0].id)),
+				or(
+					eq(games.homeTeamId, id[0].cfbApiId),
+					eq(games.awayTeamId, id[0].cfbApiId)
+				),
 			with: {
 				team_homeTeamId: true,
 				team_awayTeamId: true,
 				interactions: true,
 			},
-			orderBy: [asc(schema.games.gameDate)],
+			orderBy: [asc(schema.games.gameStart)],
 		})
 
 		console.log(typeof result)
@@ -149,6 +153,80 @@ games.get('/team/:slug', async (c) => {
 		return c.json(result)
 	} catch (error) {
 		console.error(error)
+		return c.json({ error: 'Internal Server Error' }, 500)
+	}
+})
+
+games.get('/conference/:slug', async (c) => {
+	const slug = c.req.param('slug')
+	const db = c.get('db')
+
+	try {
+		const id = await db
+			.select()
+			.from(schema.conferences)
+			.where(eq(schema.conferences.name, slug))
+
+		console.log('id', id[0].id)
+		console.log('slug', slug)
+
+		const result = await db.query.games.findMany({
+			where: (games, { eq }) => eq(games.conferenceId, id[0].id),
+			with: {
+				team_homeTeamId: true,
+				team_awayTeamId: true,
+				interactions: true,
+			},
+			orderBy: [asc(schema.games.gameStart)],
+		})
+
+		return c.json(result)
+	} catch (error) {
+		console.error(error)
+		return c.json({ error: 'Internal Server Error' }, 500)
+	}
+})
+
+games.get('/work/deleteDuplicateGames', async (c) => {
+	const db = c.get('db')
+
+	try {
+		// Find duplicate games based on cfbApiId
+		const duplicateGames = await db
+			.select({
+				cfbApiId: schema.games.cfbApiId,
+				count: sql`count(*)`.as('count'),
+			})
+			.from(schema.games)
+			.groupBy(schema.games.cfbApiId)
+			.having(sql`count(*) > 1`)
+			.execute()
+
+		console.log('Duplicate games:', duplicateGames)
+
+		// Delete duplicate games, keeping only one for each cfbApiId
+		for (const game of duplicateGames) {
+			const gamesWithSameId = await db
+				.select()
+				.from(schema.games)
+				.where(eq(schema.games.cfbApiId, game.cfbApiId))
+				.orderBy(asc(schema.games.id))
+				.execute()
+
+			// Keep the first game (with the lowest id) and delete the rest
+			for (let i = 1; i < gamesWithSameId.length; i++) {
+				await db
+					.delete(schema.games)
+					.where(eq(schema.games.id, gamesWithSameId[i].id))
+					.execute()
+			}
+		}
+
+		console.log('Duplicate games deleted')
+
+		return c.json({ message: 'Duplicate games deleted' })
+	} catch (error) {
+		console.error('Error deleting duplicate games:', error)
 		return c.json({ error: 'Internal Server Error' }, 500)
 	}
 })
