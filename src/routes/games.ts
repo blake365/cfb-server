@@ -1,6 +1,6 @@
 import { Hono } from 'hono'
 import * as schema from '../../drizzle/schema'
-import { asc, eq, gt, count, desc, or, sql } from 'drizzle-orm'
+import { asc, eq, gt, count, desc, or, sql, and } from 'drizzle-orm'
 
 const games = new Hono()
 
@@ -157,8 +157,9 @@ games.get('/team/:slug', async (c) => {
 	}
 })
 
-games.get('/conference/:slug', async (c) => {
+games.get('/conference/:slug/:week', async (c) => {
 	const slug = c.req.param('slug')
+	const week = Number.parseInt(c.req.param('week'))
 	const db = c.get('db')
 
 	try {
@@ -170,15 +171,51 @@ games.get('/conference/:slug', async (c) => {
 		console.log('id', id[0].id)
 		console.log('slug', slug)
 
-		const result = await db.query.games.findMany({
-			where: (games, { eq }) => eq(games.conferenceId, id[0].id),
-			with: {
-				team_homeTeamId: true,
-				team_awayTeamId: true,
-				interactions: true,
-			},
-			orderBy: [asc(schema.games.gameStart)],
+		const teams = await db.query.teams.findMany({
+			where: (teams, { eq }) => eq(teams.conferenceId, id[0].id),
 		})
+
+		// console.log('teams', teams)
+
+		let result = []
+
+		for (const team of teams) {
+			console.log('team', team.name)
+
+			const teamGames = await db.query.games.findMany({
+				where: (games, { eq, and, or }) =>
+					or(
+						eq(games.homeTeamId, team.cfbApiId),
+						eq(games.awayTeamId, team.cfbApiId)
+					),
+				with: {
+					team_homeTeamId: true,
+					team_awayTeamId: true,
+					interactions: true,
+				},
+				orderBy: [desc(schema.games.gameStart)],
+			})
+
+			const filteredGames = teamGames.filter((game) => game.week === week)
+
+			// don't add a game if undefined
+			if (!teamGames) {
+				continue
+			}
+
+			// if the game is already in the result, skip it
+			if (
+				result.some((game) => game?.cfbApiId === filteredGames[0]?.cfbApiId)
+			) {
+				continue
+			}
+
+			result.push(filteredGames[0])
+		}
+
+		console.log('result', result)
+
+		result = result.filter((game) => game)
 
 		return c.json(result)
 	} catch (error) {

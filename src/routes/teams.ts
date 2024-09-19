@@ -1,6 +1,6 @@
 import { Hono } from 'hono'
 import * as schema from '../../drizzle/schema'
-import { asc, or } from 'drizzle-orm'
+import { asc, or, eq } from 'drizzle-orm'
 
 const teams = new Hono()
 
@@ -139,6 +139,106 @@ teams.get('/newTeamsFromApi/hello', async (c) => {
 		return c.json({ message: 'Teams added' })
 	} catch (error) {
 		console.error('Error in newTeamsFromApi:', error)
+		return c.json({ error: error.message }, { status: 500 })
+	}
+})
+
+teams.get('/updateRecords/hello', async (c) => {
+	const db = c.get('db')
+	try {
+		console.log('getting records')
+		const apiRecords = await fetch(
+			'https://api.collegefootballdata.com/records?year=2024',
+			{
+				headers: {
+					Authorization: `Bearer ${Bun.env.cfbdata_api_key}`,
+				},
+			}
+		)
+		const records = await apiRecords.json()
+
+		// console.log(records)
+
+		for (const record of records) {
+			// console.log(record)
+			await db
+				.update(schema.teams)
+				.set({
+					wins: record.total.wins,
+					losses: record.total.losses,
+					ties: record.total.ties,
+					conferenceWins: record.conferenceGames.wins,
+					conferenceLosses: record.conferenceGames.losses,
+					conferenceTies: record.conferenceGames.ties,
+					gamesPlayed: record.total.games,
+				})
+				.where(eq(schema.teams.cfbApiId, record.teamId))
+		}
+
+		return c.json({ message: 'Records updated' })
+	} catch (error) {
+		console.error('Error in updateRecords:', error)
+		return c.json({ error: error.message }, { status: 500 })
+	}
+})
+
+teams.get('/updateRankings/hello', async (c) => {
+	const db = c.get('db')
+	try {
+		console.log('getting rankings')
+		const apiRankings = await fetch(
+			'https://api.collegefootballdata.com/rankings?year=2024&seasonType=regular&week=4',
+			{
+				headers: {
+					Authorization: `Bearer ${Bun.env.cfbdata_api_key}`,
+				},
+			}
+		)
+
+		const rankings = await apiRankings.json()
+
+		// console.log(rankings)
+
+		for (const poll of rankings[0].polls) {
+			// console.log(poll.poll)
+			for (const rank of poll.ranks) {
+				// console.log(poll.poll)
+				// console.log(rank)
+				if (poll.poll === 'AP Top 25') {
+					await db
+						.update(schema.teams)
+						.set({
+							apRank: rank.rank,
+						})
+						.where(eq(schema.teams.name, rank.school))
+				} else if (poll.poll === 'Coaches Poll') {
+					await db
+						.update(schema.teams)
+						.set({
+							coachesRank: rank.rank,
+						})
+						.where(eq(schema.teams.name, rank.school))
+				} else if (poll.poll === 'CFP Rankings') {
+					await db
+						.update(schema.teams)
+						.set({
+							cfpRank: rank.rank,
+						})
+						.where(eq(schema.teams.name, rank.school))
+				} else if (poll.poll === 'FCS Coaches Poll') {
+					await db
+						.update(schema.teams)
+						.set({
+							coachesRank: rank.rank,
+						})
+						.where(eq(schema.teams.name, rank.school))
+				}
+			}
+		}
+
+		return c.json({ message: 'Rankings updated' })
+	} catch (error) {
+		console.error('Error in updateRankings:', error)
 		return c.json({ error: error.message }, { status: 500 })
 	}
 })
