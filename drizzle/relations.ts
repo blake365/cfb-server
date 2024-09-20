@@ -41,7 +41,7 @@ export const conferencesRelations = relations(conferences, ({ many }) => ({
 export const teamstatsRelations = relations(teamstats, ({ one }) => ({
 	team: one(teams, {
 		fields: [teamstats.teamId],
-		references: [teams.id],
+		references: [teams.cfbApiId],
 	}),
 	season: one(seasons, {
 		fields: [teamstats.seasonId],

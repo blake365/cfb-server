@@ -52,12 +52,54 @@ export default function calculateInterestScore(game) {
 				? Math.min(...validAwayRanks, baseRank)
 				: baseRank
 
-		const rankDifference = Math.abs(homeTeamRank - awayTeamRank)
+		console.log(homeTeamRank, awayTeamRank)
 
+		const rankDifference = Math.abs(homeTeamRank - awayTeamRank)
+		console.log(rankDifference)
+
+		console.log(10 * (1 - rankDifference / baseRank))
 		return 10 * (1 - rankDifference / baseRank)
 	}
 
 	score += analyzeRankings(homeTeam, awayTeam)
+
+	if (
+		homeTeam.apRank ||
+		awayTeam.apRank ||
+		homeTeam.coachesRank ||
+		awayTeam.coachesRank ||
+		homeTeam.cfpRank ||
+		awayTeam.cfpRank
+	) {
+		score += 10
+	}
+
+	if (
+		homeTeam.apRank < 10 ||
+		awayTeam.apRank < 10 ||
+		homeTeam.coachesRank < 10 ||
+		awayTeam.coachesRank < 10 ||
+		homeTeam.cfpRank < 10 ||
+		awayTeam.cfpRank < 10
+	) {
+		score += 10
+	}
+
+	if (homeTeam.division !== awayTeam.division) {
+		score -= 10
+	}
+
+	if (homeTeam.division === 'fcs' && awayTeam.division === 'fcs') {
+		score -= 10
+	}
+
+	const deductForLosses = (homeTeam, awayTeam) => {
+		const homePenalty = homeTeam.losses * 2
+		const awayPenalty = awayTeam.losses * 2
+		return homePenalty + awayPenalty
+	}
+
+	score -= deductForLosses(homeTeam, awayTeam)
 
 	const processInteractions = (interactions) => {
 		let interactionScore = 0

@@ -45,7 +45,9 @@ teams.get('/name/:name', async (c) => {
 		where: (teams, { eq }) => eq(teams.name, name),
 		with: {
 			conference: true,
-			teamstats: true,
+			teamstats: {
+				where: (teamstats, { eq }) => eq(teamstats.seasonId, 1), // Adjust the seasonId as needed
+			},
 		},
 	})
 	return c.json(result)
@@ -132,6 +134,7 @@ teams.get('/newTeamsFromApi/hello', async (c) => {
 				cfbApiId: team.id,
 				conferenceId: conference.id,
 				location: `${team.location.city}, ${team.location.state}`,
+				division: team.classification,
 			})
 		}
 
@@ -139,6 +142,92 @@ teams.get('/newTeamsFromApi/hello', async (c) => {
 		return c.json({ message: 'Teams added' })
 	} catch (error) {
 		console.error('Error in newTeamsFromApi:', error)
+		return c.json({ error: error.message }, { status: 500 })
+	}
+})
+
+teams.put('/updateTeamsFromApi/hello', async (c) => {
+	const db = c.get('db')
+
+	try {
+		console.log('Fetching teams from API')
+		const apiTeams = await fetch('https://api.collegefootballdata.com/teams', {
+			headers: {
+				Authorization: `Bearer ${Bun.env.cfbdata_api_key}`,
+			},
+		})
+		const teams = await apiTeams.json()
+
+		for (const team of teams) {
+			await db
+				.update(schema.teams)
+				.set({
+					division: team.classification,
+					primaryColor: team.color,
+					secondaryColor: team.alt_color,
+					logo: team.logos ? team?.logos[0] : null,
+				})
+				.where(eq(schema.teams.cfbApiId, team.id))
+		}
+
+		return c.json({ message: 'Teams updated' })
+	} catch (error) {
+		console.error('Error in updateTeamsFromApi:', error)
+		return c.json({ error: error.message }, { status: 500 })
+	}
+})
+
+teams.get('/updateTeamStats/hello', async (c) => {
+	const db = c.get('db')
+	try {
+		console.log('updating team stats')
+		const apiTeamStats = await fetch(
+			'https://api.collegefootballdata.com/stats/season?year=2024',
+			{
+				headers: {
+					Authorization: `Bearer ${Bun.env.cfbdata_api_key}`,
+				},
+			}
+		)
+		const teamStats = await apiTeamStats.json()
+
+		// console.log(teamStats)
+
+		// Group stats by team using a reducer
+		const groupedStats = teamStats.reduce((acc, stat) => {
+			if (!acc[stat.team]) {
+				acc[stat.team] = {}
+			}
+			acc[stat.team][stat.statName] = stat.statValue
+			return acc
+		}, {})
+
+		// console.log(groupedStats)
+
+		for (const team of Object.keys(groupedStats)) {
+			// console.log(team)
+			// console.log(groupedStats[team])
+			const teamId = await db
+				.select({ id: schema.teams.cfbApiId })
+				.from(schema.teams)
+				.where(eq(schema.teams.name, team))
+			console.log(teamId[0].id)
+			await db
+				.insert(schema.teamstats)
+				.values({
+					teamId: teamId[0].id,
+					seasonId: 1,
+					...groupedStats[team],
+				})
+				.onConflictDoUpdate({
+					target: [schema.teamstats.teamId, schema.teamstats.seasonId],
+					set: groupedStats[team],
+				})
+		}
+
+		return c.json({ message: 'Team stats updated' })
+	} catch (error) {
+		console.error('Error in updateTeamStats:', error)
 		return c.json({ error: error.message }, { status: 500 })
 	}
 })

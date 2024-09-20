@@ -117,8 +117,30 @@ games.get('/week/:week', async (c) => {
 			team_awayTeamId: true,
 			interactions: true,
 		},
+		orderBy: (games, { desc }) => [desc(games.interestScore)],
 	})
-	return c.json(result)
+
+	const filteredResults = result.filter((game) => {
+		if (
+			game.team_homeTeamId.division === 'fcs' &&
+			game.team_awayTeamId.division === 'fcs'
+		) {
+			return false
+		}
+
+		if (
+			(!game.team_homeTeamId.division &&
+				game.team_awayTeamId.division === 'fcs') ||
+			(game.team_homeTeamId.division === 'fcs' &&
+				!game.team_awayTeamId.division)
+		) {
+			return false
+		}
+
+		return true
+	})
+
+	return c.json(filteredResults)
 })
 
 games.get('/team/:slug', async (c) => {
@@ -148,8 +170,8 @@ games.get('/team/:slug', async (c) => {
 			orderBy: [asc(schema.games.gameStart)],
 		})
 
-		console.log(typeof result)
-		console.log('result', result)
+		// console.log(typeof result)
+		// console.log('result', result)
 		return c.json(result)
 	} catch (error) {
 		console.error(error)
@@ -213,7 +235,7 @@ games.get('/conference/:slug/:week', async (c) => {
 			result.push(filteredGames[0])
 		}
 
-		console.log('result', result)
+		// console.log('result', result)
 
 		result = result.filter((game) => game)
 

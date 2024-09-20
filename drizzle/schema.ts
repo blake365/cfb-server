@@ -7,6 +7,8 @@ import {
 	timestamp,
 	boolean,
 	serial,
+	uniqueIndex,
+	doublePrecision,
 } from 'drizzle-orm/pg-core'
 import { sql } from 'drizzle-orm'
 
@@ -82,16 +84,45 @@ export const teamstats = pgTable(
 	{
 		id: serial('id').primaryKey(),
 		teamId: integer('team_id'),
-		seasonId: serial('season_id'),
-		passingYards: integer('passing_yards'),
+		seasonId: integer('season_id'),
+		completionAttempts: integer('completion_attempts'),
+		defensiveTDs: integer('defensive_tds'),
+		extraPoints: integer('extra_points'),
+		fieldGoalPct: integer('field_goal_pct'),
+		fieldGoals: integer('field_goals'),
+		firstDowns: integer('first_downs'),
+		fourthDownEff: integer('fourth_down_eff'),
+		fumblesLost: integer('fumbles_lost'),
+		fumblesRecovered: integer('fumbles_recovered'),
+		interceptions: integer('interceptions'),
+		interceptionTDs: integer('interception_tds'),
+		interceptionYards: integer('interception_yards'),
+		kickingPoints: integer('kicking_points'),
+		kickReturns: integer('kick_returns'),
+		kickReturnTDs: integer('kick_return_tds'),
+		kickReturnYards: integer('kick_return_yards'),
+		netPassingYards: integer('net_passing_yards'),
+		passesDeflected: integer('passes_deflected'),
+		passesIntercepted: integer('passes_intercepted'),
+		passingTDs: integer('passing_tds'),
+		possessionTime: integer('possession_time'),
+		puntReturns: integer('punt_returns'),
+		puntReturnTDs: integer('punt_return_tds'),
+		puntReturnYards: integer('punt_return_yards'),
+		qbHurries: integer('qb_hurries'),
+		rushingAttempts: integer('rushing_attempts'),
+		rushingTDs: integer('rushing_tds'),
 		rushingYards: integer('rushing_yards'),
-		turnovers: integer('turnovers'),
-		totalTouchdowns: integer('total_touchdowns'),
-		yardsAllowed: integer('yards_allowed'),
-		takeaways: integer('takeaways'),
+		sacks: integer('sacks'),
+		tackles: integer('tackles'),
+		tacklesForLoss: integer('tackles_for_loss'),
+		thirdDownEff: integer('third_down_eff'),
+		totalFumbles: integer('total_fumbles'),
+		totalPenaltiesYards: integer('total_penalties_yards'),
 		totalYards: integer('total_yards'),
-		rushingYardsAllowed: integer('rushing_yards_allowed'),
-		passingYardsAllowed: integer('passing_yards_allowed'),
+		turnovers: integer('turnovers'),
+		yardsPerPass: integer('yards_per_pass'),
+		yardsPerRushAttempt: integer('yards_per_rush_attempt'),
 	},
 	(table) => {
 		return {
@@ -105,6 +136,10 @@ export const teamstats = pgTable(
 				foreignColumns: [seasons.id],
 				name: 'teamstats_season_id_fkey',
 			}),
+			teamSeasonUnique: uniqueIndex('team_season_unique').on(
+				table.teamId,
+				table.seasonId
+			),
 		}
 	}
 )
@@ -162,6 +197,7 @@ export const games = pgTable(
 		tvNetwork: text('tv_network'),
 		rivalry: boolean('rivalry').default(false),
 		interestScore: integer('interest_score').default(40),
+		spread: doublePrecision('spread').default(0),
 	},
 	(table) => {
 		return {
