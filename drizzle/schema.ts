@@ -83,8 +83,8 @@ export const teamstats = pgTable(
 	'teamstats',
 	{
 		id: serial('id').primaryKey(),
-		teamId: integer('team_id'),
-		seasonId: integer('season_id'),
+		teamId: serial('team_id'),
+		seasonId: serial('season_id'),
 		completionAttempts: integer('completion_attempts'),
 		defensiveTDs: integer('defensive_tds'),
 		extraPoints: integer('extra_points'),
@@ -149,7 +149,7 @@ export const gamestats = pgTable(
 	{
 		id: serial('id').primaryKey(),
 		gameId: serial('game_id'),
-		teamId: integer('team_id'),
+		teamId: serial('team_id'),
 		passingYards: integer('passing_yards'),
 		rushingYards: integer('rushing_yards'),
 		turnovers: integer('turnovers'),
@@ -187,6 +187,9 @@ export const games = pgTable(
 			withTimezone: true,
 			mode: 'string',
 		}),
+		gameCompleted: boolean('game_completed').default(false),
+		homeTeamName: text('home_team_name'),
+		awayTeamName: text('away_team_name'),
 		homeTeamScore: integer('home_team_score'),
 		awayTeamScore: integer('away_team_score'),
 		stadiumId: serial('stadium_id'),
@@ -194,10 +197,13 @@ export const games = pgTable(
 		seasonId: serial('season_id'),
 		week: integer('week'),
 		type: text('type'),
+		mediaType: text('media_type'),
 		tvNetwork: text('tv_network'),
 		rivalry: boolean('rivalry').default(false),
 		interestScore: integer('interest_score').default(40),
-		spread: doublePrecision('spread').default(0),
+		spread: text('spread'),
+		overUnder: text('over_under'),
+		bettingSource: text('betting_source'),
 	},
 	(table) => {
 		return {
@@ -242,3 +248,22 @@ export const interactions = pgTable(
 		}
 	}
 )
+
+export const scoreboard = pgTable('scoreboard', {
+	id: serial('id').primaryKey(),
+	cfbApiId: integer('cfbApiId').unique(),
+	startDate: text('startDate'),
+	status: text('status'),
+	period: text('period'),
+	clock: text('clock'),
+	possession: text('possession'),
+	lastPlay: text('lastPlay'),
+	homeTeamId: integer('homeTeamId'),
+	homeTeamName: text('homeTeamName'),
+	homeTeamPoints: integer('homeTeamPoints'),
+	awayTeamId: integer('awayTeamId'),
+	awayTeamName: text('awayTeamName'),
+	awayTeamPoints: integer('awayTeamPoints'),
+	temperature: doublePrecision('temperature'),
+	weather: text('weather'),
+})

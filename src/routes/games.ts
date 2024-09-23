@@ -121,18 +121,12 @@ games.get('/week/:week', async (c) => {
 	})
 
 	const filteredResults = result.filter((game) => {
-		if (
-			game.team_homeTeamId.division === 'fcs' &&
-			game.team_awayTeamId.division === 'fcs'
-		) {
-			return false
-		}
+		console.log(game.team_homeTeamId.division, game.team_awayTeamId.division)
 
 		if (
-			(!game.team_homeTeamId.division &&
-				game.team_awayTeamId.division === 'fcs') ||
-			(game.team_homeTeamId.division === 'fcs' &&
-				!game.team_awayTeamId.division)
+			// if neither team is fbs, return false
+			game.team_homeTeamId.division !== 'fbs' &&
+			game.team_awayTeamId.division !== 'fbs'
 		) {
 			return false
 		}
@@ -242,6 +236,88 @@ games.get('/conference/:slug/:week', async (c) => {
 		return c.json(result)
 	} catch (error) {
 		console.error(error)
+		return c.json({ error: 'Internal Server Error' }, 500)
+	}
+})
+
+games.get('/getBettingLines/hello', async (c) => {
+	const db = c.get('db')
+	try {
+		console.log('getting betting lines')
+		const apiBettingLines = await fetch(
+			'https://api.collegefootballdata.com/lines?year=2024',
+			{
+				headers: {
+					Authorization: `Bearer ${Bun.env.cfbdata_api_key}`,
+				},
+			}
+		)
+		const bettingLines = await apiBettingLines.json()
+		// console.log('betting lines', bettingLines)
+
+		const filteredBettingLines = bettingLines.filter(
+			(game) => game.lines.length > 0
+		)
+
+		for (const game of filteredBettingLines) {
+			// console.log('game', game)
+
+			const bettingLine = game.lines[game.lines.length - 1]
+
+			await db
+				.update(schema.games)
+				.set({
+					spread: bettingLine.formattedSpread,
+					overUnder: bettingLine?.overUnder?.toString() || null,
+					bettingSource: bettingLine.provider,
+				})
+				.where(
+					and(
+						eq(schema.games.week, game.week),
+						eq(schema.games.homeTeamName, game.homeTeam),
+						eq(schema.games.awayTeamName, game.awayTeam)
+					)
+				)
+		}
+
+		return c.json({ message: 'updated betting lines' })
+	} catch (error) {
+		console.error('Error getting betting lines:', error)
+		return c.json({ error: 'Internal Server Error' }, 500)
+	}
+})
+
+games.get('/getMediaInformation/hello', async (c) => {
+	const db = c.get('db')
+	try {
+		console.log('getting media')
+		const apiMedia = await fetch(
+			'https://api.collegefootballdata.com/games/media?year=2024',
+			{
+				headers: {
+					Authorization: `Bearer ${Bun.env.cfbdata_api_key}`,
+				},
+			}
+		)
+		const media = await apiMedia.json()
+		// console.log('media', media)
+
+		for (const game of media) {
+			console.log('game', game)
+			await db
+				.update(schema.games)
+				.set({ tvNetwork: game.outlet, mediaType: game.mediaType })
+				.where(
+					and(
+						eq(schema.games.week, game.week),
+						eq(schema.games.homeTeamName, game.homeTeam),
+						eq(schema.games.awayTeamName, game.awayTeam)
+					)
+				)
+		}
+		return c.json({ message: 'media added to games' })
+	} catch (error) {
+		console.error('Error getting media:', error)
 		return c.json({ error: 'Internal Server Error' }, 500)
 	}
 })

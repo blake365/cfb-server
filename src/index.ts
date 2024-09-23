@@ -11,6 +11,7 @@ import games from './routes/games'
 import conferences from './routes/conferences'
 import interactions from './routes/interactions'
 import cron from './routes/cron'
+import scoreboard from './routes/scoreboard'
 
 const client = new Client({
 	connectionString: 'postgresql://postgres:hokies@localhost:5432/cfbSickos',
@@ -45,6 +46,7 @@ app.route('/games', games)
 app.route('/conferences', conferences)
 app.route('/interactions', interactions)
 app.route('/cron', cron)
+app.route('/scoreboard', scoreboard)
 
 // Custom Not Found Message
 app.notFound((c) => {

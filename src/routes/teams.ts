@@ -372,6 +372,8 @@ teams.get('/newGamesFromApi/hello', async (c) => {
 				.values({
 					awayTeamId: game.away_id,
 					homeTeamId: game.home_id,
+					awayTeamName: game.away_team,
+					homeTeamName: game.home_team,
 					awayTeamScore: game.away_points,
 					homeTeamScore: game.home_points,
 					gameStart: game.start_date,
