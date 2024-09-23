@@ -24,6 +24,6 @@
 		"db:seed": "bun run ./src/db/seed.ts",
 		"format": "bunx @biomejs/biome format ./src --write",
 		"lint": "bunx @biomejs/biome lint ./src",
-		"start": "bun run src/index.ts"
+		"start": "drizzle-kit push && bun run src/index.ts"
 	}
 }
