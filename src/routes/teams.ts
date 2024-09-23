@@ -1,11 +1,11 @@
-import { Hono } from 'hono'
-import * as schema from '../../drizzle/schema'
-import { asc, or, eq } from 'drizzle-orm'
+import { Hono } from "hono";
+import * as schema from "../../drizzle/schema";
+import { asc, or, eq } from "drizzle-orm";
 
-const teams = new Hono()
+const teams = new Hono();
 
-teams.get('/', async (c) => {
-	const db = c.get('db')
+teams.get("/", async (c) => {
+	const db = c.get("db");
 	const result = await db.query.teams.findMany({
 		with: {
 			conference: true,
@@ -13,34 +13,34 @@ teams.get('/', async (c) => {
 			games_homeTeamId: true,
 		},
 		orderBy: [asc(schema.teams.name)],
-	})
+	});
 
 	const filteredResult = result.filter((team) => {
 		return (
-			team.conference.classification === 'fbs' ||
-			team.conference.classification === 'fcs'
-		)
-	})
-	return c.json(filteredResult)
-})
+			team.conference.classification === "fbs" ||
+			team.conference.classification === "fcs"
+		);
+	});
+	return c.json(filteredResult);
+});
 
-teams.get('/:id', async (c) => {
-	const db = c.get('db')
+teams.get("/:id", async (c) => {
+	const db = c.get("db");
 	const result = await db.query.teams.findFirst({
-		where: (teams, { eq }) => eq(teams.id, Number.parseInt(c.req.param('id'))),
+		where: (teams, { eq }) => eq(teams.id, Number.parseInt(c.req.param("id"))),
 		with: {
 			conference: true,
 			games_awayTeamId: true,
 			games_homeTeamId: true,
 		},
-	})
-	return c.json(result)
-})
+	});
+	return c.json(result);
+});
 
-teams.get('/name/:name', async (c) => {
-	const db = c.get('db')
-	const name = c.req.param('name')
-	console.log(name)
+teams.get("/name/:name", async (c) => {
+	const db = c.get("db");
+	const name = c.req.param("name");
+	console.log(name);
 	const result = await db.query.teams.findFirst({
 		where: (teams, { eq }) => eq(teams.name, name),
 		with: {
@@ -49,71 +49,71 @@ teams.get('/name/:name', async (c) => {
 				where: (teamstats, { eq }) => eq(teamstats.seasonId, 1), // Adjust the seasonId as needed
 			},
 		},
-	})
-	return c.json(result)
-})
+	});
+	return c.json(result);
+});
 
-teams.put('/:id', async (c) => {
-	const db = c.get('db')
-	const body = await c.req.json()
+teams.put("/:id", async (c) => {
+	const db = c.get("db");
+	const body = await c.req.json();
 	const result = await db
 		.update(schema.teams)
 		.set(body)
-		.where(eq(schema.teams.id, Number.parseInt(c.req.param('id'))))
-	return c.json(result)
-})
+		.where(eq(schema.teams.id, Number.parseInt(c.req.param("id"))));
+	return c.json(result);
+});
 
-teams.post('/new', async (c) => {
-	const db = c.get('db')
-	const body = await c.req.json()
-	const result = await db.insert(schema.teams).values(body)
-	return c.json(result)
-})
+teams.post("/new", async (c) => {
+	const db = c.get("db");
+	const body = await c.req.json();
+	const result = await db.insert(schema.teams).values(body);
+	return c.json(result);
+});
 
-teams.get('/conference/:slug', async (c) => {
-	const db = c.get('db')
-	const slug = c.req.param('slug')
-	console.log(slug)
+teams.get("/conference/:slug", async (c) => {
+	const db = c.get("db");
+	const slug = c.req.param("slug");
+	console.log(slug);
 	const conference = await db.query.conferences.findFirst({
 		where: (conferences, { eq }) => eq(conferences.abbreviation, slug),
-	})
+	});
 
-	const conferenceId = conference[0]?.id
-	console.log(conferenceId)
+	const conferenceId = conference[0]?.id;
+	console.log(conferenceId);
 
 	const result = await db.query.teams.findMany({
 		where: (teams, { eq }) => eq(teams.conferenceId, conferenceId),
-	})
-	return c.json(result)
-})
+	});
+	return c.json(result);
+});
 
-teams.get('/newTeamsFromApi/hello', async (c) => {
-	const db = c.get('db')
+teams.get("/newTeamsFromApi/hello", async (c) => {
+	const db = c.get("db");
 	try {
-		console.log('Fetching teams from API')
-		const apiTeams = await fetch('https://api.collegefootballdata.com/teams', {
+		console.log("Fetching teams from API");
+		const apiTeams = await fetch("https://api.collegefootballdata.com/teams", {
 			headers: {
 				Authorization: `Bearer ${Bun.env.cfbdata_api_key}`,
 			},
-		})
-		const teams = await apiTeams.json()
+		});
+		const teams = await apiTeams.json();
 
 		// console.log('API response status:', apiTeams.status)
 		// console.log('API response ok:', apiTeams.ok)
 
-		const conferences = await fetch('http://localhost:3001/conferences')
-		const conferenceData = await conferences.json()
+		const conferenceData = await db.query.conferences.findMany();
+		console.log(conferenceData);
 
 		for (const team of teams) {
 			const conference = conferenceData.find(
-				(conference) => conference.name === team.conference
-			)
+				(conference) => conference.name === team.conference,
+			);
 
 			// console.log(conference)
 
 			if (!conference) {
-				console.log('Conference not found for team:', team.school)
-				continue
+				console.log("Conference not found for team:", team.school);
+				continue;
 			}
 
 			await db.insert(schema.teams).values({
@@ -135,28 +135,28 @@ teams.get('/newTeamsFromApi/hello', async (c) => {
 				conferenceId: conference.id,
 				location: `${team.location.city}, ${team.location.state}`,
 				division: team.classification,
-			})
+			});
 		}
 
 		// console.log(teams)
-		return c.json({ message: 'Teams added' })
+		return c.json({ message: "Teams added" });
 	} catch (error) {
-		console.error('Error in newTeamsFromApi:', error)
-		return c.json({ error: error.message }, { status: 500 })
+		console.error("Error in newTeamsFromApi:", error);
+		return c.json({ error: error.message }, { status: 500 });
 	}
-})
+});
 
-teams.put('/updateTeamsFromApi/hello', async (c) => {
-	const db = c.get('db')
+teams.put("/updateTeamsFromApi/hello", async (c) => {
+	const db = c.get("db");
 
 	try {
-		console.log('Fetching teams from API')
-		const apiTeams = await fetch('https://api.collegefootballdata.com/teams', {
+		console.log("Fetching teams from API");
+		const apiTeams = await fetch("https://api.collegefootballdata.com/teams", {
 			headers: {
 				Authorization: `Bearer ${Bun.env.cfbdata_api_key}`,
 			},
-		})
-		const teams = await apiTeams.json()
+		});
+		const teams = await apiTeams.json();
 
 		for (const team of teams) {
 			await db
@@ -167,40 +167,40 @@ teams.put('/updateTeamsFromApi/hello', async (c) => {
 					secondaryColor: team.alt_color,
 					logo: team.logos ? team?.logos[0] : null,
 				})
-				.where(eq(schema.teams.cfbApiId, team.id))
+				.where(eq(schema.teams.cfbApiId, team.id));
 		}
 
-		return c.json({ message: 'Teams updated' })
+		return c.json({ message: "Teams updated" });
 	} catch (error) {
-		console.error('Error in updateTeamsFromApi:', error)
-		return c.json({ error: error.message }, { status: 500 })
+		console.error("Error in updateTeamsFromApi:", error);
+		return c.json({ error: error.message }, { status: 500 });
 	}
-})
+});
 
-teams.get('/updateTeamStats/hello', async (c) => {
-	const db = c.get('db')
+teams.get("/updateTeamStats/hello", async (c) => {
+	const db = c.get("db");
 	try {
-		console.log('updating team stats')
+		console.log("updating team stats");
 		const apiTeamStats = await fetch(
-			'https://api.collegefootballdata.com/stats/season?year=2024',
+			"https://api.collegefootballdata.com/stats/season?year=2024",
 			{
 				headers: {
 					Authorization: `Bearer ${Bun.env.cfbdata_api_key}`,
 				},
-			}
-		)
-		const teamStats = await apiTeamStats.json()
+			},
+		);
+		const teamStats = await apiTeamStats.json();
 
 		// console.log(teamStats)
 
 		// Group stats by team using a reducer
 		const groupedStats = teamStats.reduce((acc, stat) => {
 			if (!acc[stat.team]) {
-				acc[stat.team] = {}
+				acc[stat.team] = {};
 			}
-			acc[stat.team][stat.statName] = stat.statValue
-			return acc
-		}, {})
+			acc[stat.team][stat.statName] = stat.statValue;
+			return acc;
+		}, {});
 
 		// console.log(groupedStats)
 
@@ -210,8 +210,8 @@ teams.get('/updateTeamStats/hello', async (c) => {
 			const teamId = await db
 				.select({ id: schema.teams.cfbApiId })
 				.from(schema.teams)
-				.where(eq(schema.teams.name, team))
-			console.log(teamId[0].id)
+				.where(eq(schema.teams.name, team));
+			console.log(teamId[0].id);
 			await db
 				.insert(schema.teamstats)
 				.values({
@@ -222,29 +222,29 @@ teams.get('/updateTeamStats/hello', async (c) => {
 				.onConflictDoUpdate({
 					target: [schema.teamstats.teamId, schema.teamstats.seasonId],
 					set: groupedStats[team],
-				})
+				});
 		}
 
-		return c.json({ message: 'Team stats updated' })
+		return c.json({ message: "Team stats updated" });
 	} catch (error) {
-		console.error('Error in updateTeamStats:', error)
-		return c.json({ error: error.message }, { status: 500 })
+		console.error("Error in updateTeamStats:", error);
+		return c.json({ error: error.message }, { status: 500 });
 	}
-})
+});
 
-teams.get('/updateRecords/hello', async (c) => {
-	const db = c.get('db')
+teams.get("/updateRecords/hello", async (c) => {
+	const db = c.get("db");
 	try {
-		console.log('getting records')
+		console.log("getting records");
 		const apiRecords = await fetch(
-			'https://api.collegefootballdata.com/records?year=2024',
+			"https://api.collegefootballdata.com/records?year=2024",
 			{
 				headers: {
 					Authorization: `Bearer ${Bun.env.cfbdata_api_key}`,
 				},
-			}
-		)
-		const records = await apiRecords.json()
+			},
+		);
+		const records = await apiRecords.json();
 
 		// console.log(records)
 
@@ -261,30 +261,30 @@ teams.get('/updateRecords/hello', async (c) => {
 					conferenceTies: record.conferenceGames.ties,
 					gamesPlayed: record.total.games,
 				})
-				.where(eq(schema.teams.cfbApiId, record.teamId))
+				.where(eq(schema.teams.cfbApiId, record.teamId));
 		}
 
-		return c.json({ message: 'Records updated' })
+		return c.json({ message: "Records updated" });
 	} catch (error) {
-		console.error('Error in updateRecords:', error)
-		return c.json({ error: error.message }, { status: 500 })
+		console.error("Error in updateRecords:", error);
+		return c.json({ error: error.message }, { status: 500 });
 	}
-})
+});
 
-teams.get('/updateRankings/hello', async (c) => {
-	const db = c.get('db')
+teams.get("/updateRankings/hello", async (c) => {
+	const db = c.get("db");
 	try {
-		console.log('getting rankings')
+		console.log("getting rankings");
 		const apiRankings = await fetch(
-			'https://api.collegefootballdata.com/rankings?year=2024&seasonType=regular&week=4',
+			"https://api.collegefootballdata.com/rankings?year=2024&seasonType=regular&week=4",
 			{
 				headers: {
 					Authorization: `Bearer ${Bun.env.cfbdata_api_key}`,
 				},
-			}
-		)
+			},
+		);
 
-		const rankings = await apiRankings.json()
+		const rankings = await apiRankings.json();
 
 		// console.log(rankings)
 
@@ -293,78 +293,78 @@ teams.get('/updateRankings/hello', async (c) => {
 			for (const rank of poll.ranks) {
 				// console.log(poll.poll)
 				// console.log(rank)
-				if (poll.poll === 'AP Top 25') {
+				if (poll.poll === "AP Top 25") {
 					await db
 						.update(schema.teams)
 						.set({
 							apRank: rank.rank,
 						})
-						.where(eq(schema.teams.name, rank.school))
-				} else if (poll.poll === 'Coaches Poll') {
+						.where(eq(schema.teams.name, rank.school));
+				} else if (poll.poll === "Coaches Poll") {
 					await db
 						.update(schema.teams)
 						.set({
 							coachesRank: rank.rank,
 						})
-						.where(eq(schema.teams.name, rank.school))
-				} else if (poll.poll === 'CFP Rankings') {
+						.where(eq(schema.teams.name, rank.school));
+				} else if (poll.poll === "CFP Rankings") {
 					await db
 						.update(schema.teams)
 						.set({
 							cfpRank: rank.rank,
 						})
-						.where(eq(schema.teams.name, rank.school))
-				} else if (poll.poll === 'FCS Coaches Poll') {
+						.where(eq(schema.teams.name, rank.school));
+				} else if (poll.poll === "FCS Coaches Poll") {
 					await db
 						.update(schema.teams)
 						.set({
 							coachesRank: rank.rank,
 						})
-						.where(eq(schema.teams.name, rank.school))
+						.where(eq(schema.teams.name, rank.school));
 				}
 			}
 		}
 
-		return c.json({ message: 'Rankings updated' })
+		return c.json({ message: "Rankings updated" });
 	} catch (error) {
-		console.error('Error in updateRankings:', error)
-		return c.json({ error: error.message }, { status: 500 })
+		console.error("Error in updateRankings:", error);
+		return c.json({ error: error.message }, { status: 500 });
 	}
-})
+});
 
-teams.get('/newGamesFromApi/hello', async (c) => {
-	const db = c.get('db')
+teams.get("/newGamesFromApi/hello", async (c) => {
+	const db = c.get("db");
 	try {
-		console.log('Fetching games from API')
+		console.log("Fetching games from API");
 		const apiGames = await fetch(
-			'https://api.collegefootballdata.com/games?year=2024&seasonType=regular&division=fbs',
+			"https://api.collegefootballdata.com/games?year=2024&seasonType=regular&division=fbs",
 			{
 				headers: {
 					Authorization: `Bearer ${Bun.env.cfbdata_api_key}`,
 				},
-			}
-		)
-		const games = await apiGames.json()
+			},
+		);
+		const games = await apiGames.json();
 
-		console.log('API response status:', apiGames.status)
-		console.log('API response ok:', apiGames.ok)
+		console.log("API response status:", apiGames.status);
+		console.log("API response ok:", apiGames.ok);
 
 		for (const game of games) {
-			let type = game.season_type
+			let type = game.season_type;
 			if (game.conference_game) {
-				type = 'conference'
+				type = "conference";
 			}
 
 			const awayTeam = await db.query.teams.findFirst({
 				where: (teams, { eq }) => eq(teams.cfbApiId, game.away_id),
-			})
+			});
 			const homeTeam = await db.query.teams.findFirst({
 				where: (teams, { eq }) => eq(teams.cfbApiId, game.home_id),
-			})
+			});
 
 			if (!awayTeam || !homeTeam) {
-				console.log('Team not found for game:', game)
-				continue
+				console.log("Team not found for game:", game);
+				continue;
 			}
 
 			await db
@@ -383,15 +383,15 @@ teams.get('/newGamesFromApi/hello', async (c) => {
 					cfbApiId: game.id,
 					location: game.venue,
 				})
-				.onConflictDoNothing()
+				.onConflictDoNothing();
 		}
 
 		// console.log(teams)
-		return c.json({ message: 'Games added' })
+		return c.json({ message: "Games added" });
 	} catch (error) {
-		console.error('Error in newTeamsFromApi:', error)
-		return c.json({ error: error.message }, { status: 500 })
+		console.error("Error in newTeamsFromApi:", error);
+		return c.json({ error: error.message }, { status: 500 });
 	}
-})
+});
 
-export default teams
+export default teams;
