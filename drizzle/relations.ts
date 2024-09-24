@@ -1,4 +1,4 @@
-import { relations } from 'drizzle-orm/relations'
+import { relations } from "drizzle-orm/relations";
 import {
 	teams,
 	seasons,
@@ -7,7 +7,7 @@ import {
 	games,
 	gamestats,
 	interactions,
-} from './schema'
+} from "./schema";
 
 export const teamsRelations = relations(teams, ({ one, many }) => ({
 	season: one(seasons, {
@@ -18,36 +18,39 @@ export const teamsRelations = relations(teams, ({ one, many }) => ({
 		fields: [teams.conferenceId],
 		references: [conferences.id],
 	}),
-	teamstats: many(teamstats),
+	teamstats: one(teamstats, {
+		fields: [teams.name],
+		references: [teamstats.teamName],
+	}),
 	gamestats: many(gamestats),
 	games_homeTeamId: many(games, {
-		relationName: 'games_homeTeamId_teams_id',
+		relationName: "games_homeTeamId_teams_id",
 	}),
 	games_awayTeamId: many(games, {
-		relationName: 'games_awayTeamId_teams_id',
+		relationName: "games_awayTeamId_teams_id",
 	}),
-}))
+}));
 
 export const seasonsRelations = relations(seasons, ({ many }) => ({
 	teams: many(teams),
 	teamstats: many(teamstats),
 	games: many(games),
-}))
+}));
 
 export const conferencesRelations = relations(conferences, ({ many }) => ({
 	teams: many(teams),
-}))
+}));
 
 export const teamstatsRelations = relations(teamstats, ({ one }) => ({
 	team: one(teams, {
-		fields: [teamstats.teamId],
-		references: [teams.cfbApiId],
+		fields: [teamstats.teamName],
+		references: [teams.name],
 	}),
 	season: one(seasons, {
 		fields: [teamstats.seasonId],
 		references: [seasons.id],
 	}),
-}))
+}));
 
 export const gamestatsRelations = relations(gamestats, ({ one }) => ({
 	game: one(games, {
@@ -58,30 +61,30 @@ export const gamestatsRelations = relations(gamestats, ({ one }) => ({
 		fields: [gamestats.teamId],
 		references: [teams.id],
 	}),
-}))
+}));
 
 export const gamesRelations = relations(games, ({ one, many }) => ({
 	gamestats: many(gamestats),
 	team_homeTeamId: one(teams, {
 		fields: [games.homeTeamId],
 		references: [teams.cfbApiId],
-		relationName: 'games_homeTeamId_teams_id',
+		relationName: "games_homeTeamId_teams_id",
 	}),
 	team_awayTeamId: one(teams, {
 		fields: [games.awayTeamId],
 		references: [teams.cfbApiId],
-		relationName: 'games_awayTeamId_teams_id',
+		relationName: "games_awayTeamId_teams_id",
 	}),
 	season: one(seasons, {
 		fields: [games.seasonId],
 		references: [seasons.id],
 	}),
 	interactions: many(interactions),
-}))
+}));
 
 export const interactionsRelations = relations(interactions, ({ one }) => ({
 	game: one(games, {
 		fields: [interactions.gameId],
 		references: [games.id],
 	}),
-}))
+}));

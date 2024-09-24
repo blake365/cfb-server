@@ -1,6 +1,7 @@
 import { Hono } from "hono";
 import * as schema from "../../drizzle/schema";
-import { asc, or, eq } from "drizzle-orm";
+import { asc, or, eq, sql } from "drizzle-orm";
+import weeks from "../../lib/weeks";
 
 const teams = new Hono();
 
@@ -73,18 +74,15 @@ teams.post("/new", async (c) => {
 teams.get("/conference/:slug", async (c) => {
 	const db = c.get("db");
 	const slug = c.req.param("slug");
-	console.log(slug);
+	// console.log(slug);
 	const conference = await db.query.conferences.findFirst({
 		where: (conferences, { eq }) => eq(conferences.abbreviation, slug),
+		with: {
+			teams: true,
+		},
 	});
 
-	const conferenceId = conference[0]?.id;
-	console.log(conferenceId);
-
-	const result = await db.query.teams.findMany({
-		where: (teams, { eq }) => eq(teams.conferenceId, conferenceId),
-	});
-	return c.json(result);
+	return c.json(conference?.teams);
 });
 
 teams.get("/newTeamsFromApi/hello", async (c) => {
@@ -98,25 +96,19 @@ teams.get("/newTeamsFromApi/hello", async (c) => {
 		});
 		const teams = await apiTeams.json();
 
-		// console.log('API response status:', apiTeams.status)
-		// console.log('API response ok:', apiTeams.ok)
-
 		const conferenceData = await db.query.conferences.findMany();
-		console.log(conferenceData);
 
-		for (const team of teams) {
+		const teamsToInsert = teams.reduce((acc, team) => {
 			const conference = conferenceData.find(
 				(conference) => conference.name === team.conference,
 			);
 
-			// console.log(conference)
-
 			if (!conference) {
 				console.log("Conference not found for team:", team.school);
-				continue;
+				return acc;
 			}
 
-			await db.insert(schema.teams).values({
+			acc.push({
 				name: team.school,
 				abbreviation: team.abbreviation,
 				mascot: team.mascot,
@@ -136,10 +128,15 @@ teams.get("/newTeamsFromApi/hello", async (c) => {
 				location: `${team.location.city}, ${team.location.state}`,
 				division: team.classification,
 			});
+
+			return acc;
+		}, []);
+
+		if (teamsToInsert.length > 0) {
+			await db.insert(schema.teams).values(teamsToInsert);
 		}
 
-		// console.log(teams)
-		return c.json({ message: "Teams added" });
+		return c.json({ message: `${teamsToInsert.length} teams added` });
 	} catch (error) {
 		console.error("Error in newTeamsFromApi:", error);
 		return c.json({ error: error.message }, { status: 500 });
@@ -196,34 +193,64 @@ teams.get("/updateTeamStats/hello", async (c) => {
 		// Group stats by team using a reducer
 		const groupedStats = teamStats.reduce((acc, stat) => {
 			if (!acc[stat.team]) {
-				acc[stat.team] = {};
+				acc[stat.team] = { teamName: stat.team, seasonId: 1 };
 			}
 			acc[stat.team][stat.statName] = stat.statValue;
 			return acc;
 		}, {});
 
 		// console.log(groupedStats)
+		const upsertData = Object.values(groupedStats);
+		console.log(upsertData);
 
-		for (const team of Object.keys(groupedStats)) {
-			// console.log(team)
-			// console.log(groupedStats[team])
-			const teamId = await db
-				.select({ id: schema.teams.cfbApiId })
-				.from(schema.teams)
-				.where(eq(schema.teams.name, team));
-			console.log(teamId[0].id);
-			await db
-				.insert(schema.teamstats)
-				.values({
-					teamId: teamId[0].id,
-					seasonId: 1,
-					...groupedStats[team],
-				})
-				.onConflictDoUpdate({
-					target: [schema.teamstats.teamId, schema.teamstats.seasonId],
-					set: groupedStats[team],
-				});
-		}
+		// Perform bulk upsert
+		await db
+			.insert(schema.teamstats)
+			.values(upsertData)
+			.onConflictDoUpdate({
+				target: [schema.teamstats.teamName],
+				set: {
+					seasonId: sql`EXCLUDED.season_id`,
+					completionAttempts: sql`EXCLUDED.completion_attempts`,
+					defensiveTDs: sql`EXCLUDED.defensive_tds`,
+					extraPoints: sql`EXCLUDED.extra_points`,
+					fieldGoalPct: sql`EXCLUDED.field_goal_pct`,
+					fieldGoals: sql`EXCLUDED.field_goals`,
+					firstDowns: sql`EXCLUDED.first_downs`,
+					fourthDownEff: sql`EXCLUDED.fourth_down_eff`,
+					fumblesLost: sql`EXCLUDED.fumbles_lost`,
+					fumblesRecovered: sql`EXCLUDED.fumbles_recovered`,
+					interceptions: sql`EXCLUDED.interceptions`,
+					interceptionTDs: sql`EXCLUDED.interception_tds`,
+					interceptionYards: sql`EXCLUDED.interception_yards`,
+					kickingPoints: sql`EXCLUDED.kicking_points`,
+					kickReturns: sql`EXCLUDED.kick_returns`,
+					kickReturnTDs: sql`EXCLUDED.kick_return_tds`,
+					kickReturnYards: sql`EXCLUDED.kick_return_yards`,
+					netPassingYards: sql`EXCLUDED.net_passing_yards`,
+					passesDeflected: sql`EXCLUDED.passes_deflected`,
+					passesIntercepted: sql`EXCLUDED.passes_intercepted`,
+					passingTDs: sql`EXCLUDED.passing_tds`,
+					possessionTime: sql`EXCLUDED.possession_time`,
+					puntReturns: sql`EXCLUDED.punt_returns`,
+					puntReturnTDs: sql`EXCLUDED.punt_return_tds`,
+					puntReturnYards: sql`EXCLUDED.punt_return_yards`,
+					qbHurries: sql`EXCLUDED.qb_hurries`,
+					rushingAttempts: sql`EXCLUDED.rushing_attempts`,
+					rushingTDs: sql`EXCLUDED.rushing_tds`,
+					rushingYards: sql`EXCLUDED.rushing_yards`,
+					sacks: sql`EXCLUDED.sacks`,
+					tackles: sql`EXCLUDED.tackles`,
+					tacklesForLoss: sql`EXCLUDED.tackles_for_loss`,
+					thirdDownEff: sql`EXCLUDED.third_down_eff`,
+					totalFumbles: sql`EXCLUDED.total_fumbles`,
+					totalPenaltiesYards: sql`EXCLUDED.total_penalties_yards`,
+					totalYards: sql`EXCLUDED.total_yards`,
+					turnovers: sql`EXCLUDED.turnovers`,
+					yardsPerPass: sql`EXCLUDED.yards_per_pass`,
+					yardsPerRushAttempt: sql`EXCLUDED.yards_per_rush_attempt`,
+				},
+			});
 
 		return c.json({ message: "Team stats updated" });
 	} catch (error) {
@@ -244,27 +271,41 @@ teams.get("/updateRecords/hello", async (c) => {
 				},
 			},
 		);
-		const records = await apiRecords.json();
+		const teamRecords = await apiRecords.json();
 
-		// console.log(records)
+		// Prepare bulk update data
+		const updateData = teamRecords.map((team) => ({
+			name: team.team,
+			wins: team.total.wins,
+			losses: team.total.losses,
+			ties: team.total.ties,
+			conferenceWins: team.conferenceGames.wins,
+			conferenceLosses: team.conferenceGames.losses,
+			conferenceTies: team.conferenceGames.ties,
+			gamesPlayed: team.total.games,
+		}));
 
-		for (const record of records) {
-			// console.log(record)
-			await db
-				.update(schema.teams)
-				.set({
-					wins: record.total.wins,
-					losses: record.total.losses,
-					ties: record.total.ties,
-					conferenceWins: record.conferenceGames.wins,
-					conferenceLosses: record.conferenceGames.losses,
-					conferenceTies: record.conferenceGames.ties,
-					gamesPlayed: record.total.games,
-				})
-				.where(eq(schema.teams.cfbApiId, record.teamId));
+		// Perform bulk update
+		if (updateData.length > 0) {
+			await db.transaction(async (tx) => {
+				for (const data of updateData) {
+					await tx
+						.update(schema.teams)
+						.set({
+							wins: data.wins,
+							losses: data.losses,
+							ties: data.ties,
+							conferenceWins: data.conferenceWins,
+							conferenceLosses: data.conferenceLosses,
+							conferenceTies: data.conferenceTies,
+							gamesPlayed: data.gamesPlayed,
+						})
+						.where(eq(schema.teams.name, data.name));
+				}
+			});
 		}
 
-		return c.json({ message: "Records updated" });
+		return c.json({ message: `${updateData.length} team records updated` });
 	} catch (error) {
 		console.error("Error in updateRecords:", error);
 		return c.json({ error: error.message }, { status: 500 });
@@ -273,10 +314,16 @@ teams.get("/updateRecords/hello", async (c) => {
 
 teams.get("/updateRankings/hello", async (c) => {
 	const db = c.get("db");
+
+	const now = new Date().getTime();
+	const currentWeek = weeks.find((week) => {
+		return now >= week.startDate.getTime() && now <= week.endDate.getTime();
+	});
+
 	try {
 		console.log("getting rankings");
 		const apiRankings = await fetch(
-			"https://api.collegefootballdata.com/rankings?year=2024&seasonType=regular&week=4",
+			`https://api.collegefootballdata.com/rankings?year=2024&seasonType=regular&week=${currentWeek.week}`,
 			{
 				headers: {
 					Authorization: `Bearer ${Bun.env.cfbdata_api_key}`,
@@ -287,6 +334,13 @@ teams.get("/updateRankings/hello", async (c) => {
 		const rankings = await apiRankings.json();
 
 		// console.log(rankings)
+
+		// remove all old rankings
+		await db.update(schema.teams).set({
+			apRank: null,
+			coachesRank: null,
+			cfpRank: null,
+		});
 
 		for (const poll of rankings[0].polls) {
 			// console.log(poll.poll)
@@ -307,7 +361,7 @@ teams.get("/updateRankings/hello", async (c) => {
 							coachesRank: rank.rank,
 						})
 						.where(eq(schema.teams.name, rank.school));
-				} else if (poll.poll === "CFP Rankings") {
+				} else if (poll.poll === "Playoff Committee Rankings") {
 					await db
 						.update(schema.teams)
 						.set({
@@ -382,8 +436,26 @@ teams.get("/newGamesFromApi/hello", async (c) => {
 					type: type,
 					cfbApiId: game.id,
 					location: game.venue,
+					gameCompleted: game.completed,
 				})
-				.onConflictDoNothing();
+				.onConflictDoUpdate({
+					target: [schema.games.cfbApiId],
+					set: {
+						awayTeamId: game.away_id,
+						homeTeamId: game.home_id,
+						awayTeamName: game.away_team,
+						homeTeamName: game.home_team,
+						awayTeamScore: game.away_points,
+						homeTeamScore: game.home_points,
+						gameStart: game.start_date,
+						seasonId: 1,
+						week: game.week,
+						type: type,
+						cfbApiId: game.id,
+						location: game.venue,
+						gameCompleted: game.completed,
+					},
+				});
 		}
 
 		// console.log(teams)

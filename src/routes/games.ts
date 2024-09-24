@@ -1,11 +1,11 @@
-import { Hono } from 'hono'
-import * as schema from '../../drizzle/schema'
-import { asc, eq, gt, count, desc, or, sql, and } from 'drizzle-orm'
+import { Hono } from "hono";
+import * as schema from "../../drizzle/schema";
+import { asc, eq, gt, count, desc, or, sql, and } from "drizzle-orm";
 
-const games = new Hono()
+const games = new Hono();
 
-games.get('/', async (c) => {
-	const db = c.get('db')
+games.get("/", async (c) => {
+	const db = c.get("db");
 	try {
 		const result = await db.query.games.findMany({
 			with: {
@@ -15,45 +15,45 @@ games.get('/', async (c) => {
 			},
 			orderBy: (games, { desc }) => [desc(games.interestScore)],
 			limit: 10,
-		})
+		});
 		// console.log(result)
-		return c.json(result)
+		return c.json(result);
 	} catch (error) {
-		console.error(error)
-		return c.json({ error: 'Internal Server Error' }, 500)
+		console.error(error);
+		return c.json({ error: "Internal Server Error" }, 500);
 	}
-})
+});
 
-games.get('/:id', async (c) => {
-	const db = c.get('db')
+games.get("/:id", async (c) => {
+	const db = c.get("db");
 	const result = await db.query.games.findFirst({
-		where: (games, { eq }) => eq(games.id, Number.parseInt(c.req.param('id'))),
+		where: (games, { eq }) => eq(games.id, Number.parseInt(c.req.param("id"))),
 		with: {
 			team_homeTeamId: true,
 			team_awayTeamId: true,
 			interactions: true,
 		},
-	})
-	return c.json(result)
-})
+	});
+	return c.json(result);
+});
 
-games.put('/:id', async (c) => {
-	const db = c.get('db')
-	const body = await c.req.json()
+games.put("/:id", async (c) => {
+	const db = c.get("db");
+	const body = await c.req.json();
 	const result = await db
 		.update(schema.games)
 		.set(body)
-		.where(eq(schema.games.id, Number.parseInt(c.req.param('id'))))
-	return c.json(result)
-})
+		.where(eq(schema.games.id, Number.parseInt(c.req.param("id"))));
+	return c.json(result);
+});
 
-games.delete('/:id', async (c) => {
-	const db = c.get('db')
+games.delete("/:id", async (c) => {
+	const db = c.get("db");
 	const result = await db
 		.delete(schema.games)
-		.where(eq(schema.games.id, Number.parseInt(c.req.param('id'))))
-	return c.json(result)
-})
+		.where(eq(schema.games.id, Number.parseInt(c.req.param("id"))));
+	return c.json(result);
+});
 
 // games.post('/:id/interactions', async (c) => {
 // 	const db = c.get('db')
@@ -65,35 +65,35 @@ games.delete('/:id', async (c) => {
 // 	return c.json(result)
 // })
 
-games.get('/:id/interactions', async (c) => {
+games.get("/:id/interactions", async (c) => {
 	// console.log('getting interactions', c.req.param('id'))
-	const db = c.get('db')
+	const db = c.get("db");
 	const result = await db.query.interactions.findMany({
 		where: (interactions, { eq }) =>
-			eq(interactions.gameId, Number.parseInt(c.req.param('id'))),
-	})
+			eq(interactions.gameId, Number.parseInt(c.req.param("id"))),
+	});
 	// console.log('result', result)
-	return c.json(result)
-})
+	return c.json(result);
+});
 
-games.post('/new', async (c) => {
-	const db = c.get('db')
-	const body = await c.req.json()
-	const result = await db.insert(schema.games).values(body)
-	return c.json(result)
-})
+games.post("/new", async (c) => {
+	const db = c.get("db");
+	const body = await c.req.json();
+	const result = await db.insert(schema.games).values(body);
+	return c.json(result);
+});
 
-games.get('/current', async (c) => {
+games.get("/current", async (c) => {
 	// get games happening in the current week ending on sunday
-	const currentDate = new Date()
-	const currentDayOfWeek = currentDate.getDay()
-	const sundayDate = new Date(currentDate)
-	sundayDate.setDate(currentDate.getDate() + (6 - currentDayOfWeek))
-	const startOfWeek = sundayDate
-	const endOfWeek = new Date(startOfWeek)
-	endOfWeek.setDate(startOfWeek.getDate() + 6)
+	const currentDate = new Date();
+	const currentDayOfWeek = currentDate.getDay();
+	const sundayDate = new Date(currentDate);
+	sundayDate.setDate(currentDate.getDate() + (6 - currentDayOfWeek));
+	const startOfWeek = sundayDate;
+	const endOfWeek = new Date(startOfWeek);
+	endOfWeek.setDate(startOfWeek.getDate() + 6);
 
-	const db = c.get('db')
+	const db = c.get("db");
 	const result = await db.query.games.findMany({
 		where: (games, { gte, lte }) =>
 			gte(games.date, startOfWeek) && lte(games.date, endOfWeek),
@@ -102,14 +102,14 @@ games.get('/current', async (c) => {
 			team_awayTeamId: true,
 			interactions: true,
 		},
-	})
+	});
 
-	return c.json(result)
-})
+	return c.json(result);
+});
 
-games.get('/week/:week', async (c) => {
-	const week = Number.parseInt(c.req.param('week'))
-	const db = c.get('db')
+games.get("/week/:week", async (c) => {
+	const week = Number.parseInt(c.req.param("week"));
+	const db = c.get("db");
 	const result = await db.query.games.findMany({
 		where: (games, { eq }) => eq(games.week, week),
 		with: {
@@ -118,43 +118,43 @@ games.get('/week/:week', async (c) => {
 			interactions: true,
 		},
 		orderBy: (games, { desc }) => [desc(games.interestScore)],
-	})
+	});
 
 	const filteredResults = result.filter((game) => {
-		console.log(game.team_homeTeamId.division, game.team_awayTeamId.division)
+		console.log(game.team_homeTeamId.division, game.team_awayTeamId.division);
 
 		if (
 			// if neither team is fbs, return false
-			game.team_homeTeamId.division !== 'fbs' &&
-			game.team_awayTeamId.division !== 'fbs'
+			game.team_homeTeamId.division !== "fbs" &&
+			game.team_awayTeamId.division !== "fbs"
 		) {
-			return false
+			return false;
 		}
 
-		return true
-	})
+		return true;
+	});
 
-	return c.json(filteredResults)
-})
+	return c.json(filteredResults);
+});
 
-games.get('/team/:slug', async (c) => {
-	const slug = c.req.param('slug')
-	console.log('slug', slug)
-	const db = c.get('db')
+games.get("/team/:slug", async (c) => {
+	const slug = c.req.param("slug");
+	console.log("slug", slug);
+	const db = c.get("db");
 
 	try {
 		const id = await db
 			.select()
 			.from(schema.teams)
-			.where(eq(schema.teams.name, slug))
+			.where(eq(schema.teams.name, slug));
 
-		console.log('id', id[0].id)
+		console.log("id", id[0].id);
 
 		const result = await db.query.games.findMany({
 			where: (games, { eq }) =>
 				or(
 					eq(games.homeTeamId, id[0].cfbApiId),
-					eq(games.awayTeamId, id[0].cfbApiId)
+					eq(games.awayTeamId, id[0].cfbApiId),
 				),
 			with: {
 				team_homeTeamId: true,
@@ -162,47 +162,47 @@ games.get('/team/:slug', async (c) => {
 				interactions: true,
 			},
 			orderBy: [asc(schema.games.gameStart)],
-		})
+		});
 
 		// console.log(typeof result)
 		// console.log('result', result)
-		return c.json(result)
+		return c.json(result);
 	} catch (error) {
-		console.error(error)
-		return c.json({ error: 'Internal Server Error' }, 500)
+		console.error(error);
+		return c.json({ error: "Internal Server Error" }, 500);
 	}
-})
+});
 
-games.get('/conference/:slug/:week', async (c) => {
-	const slug = c.req.param('slug')
-	const week = Number.parseInt(c.req.param('week'))
-	const db = c.get('db')
+games.get("/conference/:slug/:week", async (c) => {
+	const slug = c.req.param("slug");
+	const week = Number.parseInt(c.req.param("week"));
+	const db = c.get("db");
 
 	try {
 		const id = await db
 			.select()
 			.from(schema.conferences)
-			.where(eq(schema.conferences.name, slug))
+			.where(eq(schema.conferences.name, slug));
 
-		console.log('id', id[0].id)
-		console.log('slug', slug)
+		console.log("id", id[0].id);
+		console.log("slug", slug);
 
 		const teams = await db.query.teams.findMany({
 			where: (teams, { eq }) => eq(teams.conferenceId, id[0].id),
-		})
+		});
 
 		// console.log('teams', teams)
 
-		let result = []
+		let result = [];
 
 		for (const team of teams) {
-			console.log('team', team.name)
+			console.log("team", team.name);
 
 			const teamGames = await db.query.games.findMany({
 				where: (games, { eq, and, or }) =>
 					or(
 						eq(games.homeTeamId, team.cfbApiId),
-						eq(games.awayTeamId, team.cfbApiId)
+						eq(games.awayTeamId, team.cfbApiId),
 					),
 				with: {
 					team_homeTeamId: true,
@@ -210,59 +210,59 @@ games.get('/conference/:slug/:week', async (c) => {
 					interactions: true,
 				},
 				orderBy: [desc(schema.games.gameStart)],
-			})
+			});
 
-			const filteredGames = teamGames.filter((game) => game.week === week)
+			const filteredGames = teamGames.filter((game) => game.week === week);
 
 			// don't add a game if undefined
 			if (!teamGames) {
-				continue
+				continue;
 			}
 
 			// if the game is already in the result, skip it
 			if (
 				result.some((game) => game?.cfbApiId === filteredGames[0]?.cfbApiId)
 			) {
-				continue
+				continue;
 			}
 
-			result.push(filteredGames[0])
+			result.push(filteredGames[0]);
 		}
 
 		// console.log('result', result)
 
-		result = result.filter((game) => game)
+		result = result.filter((game) => game);
 
-		return c.json(result)
+		return c.json(result);
 	} catch (error) {
-		console.error(error)
-		return c.json({ error: 'Internal Server Error' }, 500)
+		console.error(error);
+		return c.json({ error: "Internal Server Error" }, 500);
 	}
-})
+});
 
-games.get('/getBettingLines/hello', async (c) => {
-	const db = c.get('db')
+games.get("/getBettingLines/hello", async (c) => {
+	const db = c.get("db");
 	try {
-		console.log('getting betting lines')
+		console.log("getting betting lines");
 		const apiBettingLines = await fetch(
-			'https://api.collegefootballdata.com/lines?year=2024',
+			"https://api.collegefootballdata.com/lines?year=2024",
 			{
 				headers: {
 					Authorization: `Bearer ${Bun.env.cfbdata_api_key}`,
 				},
-			}
-		)
-		const bettingLines = await apiBettingLines.json()
+			},
+		);
+		const bettingLines = await apiBettingLines.json();
 		// console.log('betting lines', bettingLines)
 
 		const filteredBettingLines = bettingLines.filter(
-			(game) => game.lines.length > 0
-		)
+			(game) => game.lines.length > 0,
+		);
 
 		for (const game of filteredBettingLines) {
 			// console.log('game', game)
 
-			const bettingLine = game.lines[game.lines.length - 1]
+			const bettingLine = game.lines[game.lines.length - 1];
 
 			await db
 				.update(schema.games)
@@ -275,35 +275,46 @@ games.get('/getBettingLines/hello', async (c) => {
 					and(
 						eq(schema.games.week, game.week),
 						eq(schema.games.homeTeamName, game.homeTeam),
-						eq(schema.games.awayTeamName, game.awayTeam)
-					)
-				)
+						eq(schema.games.awayTeamName, game.awayTeam),
+					),
+				);
 		}
 
-		return c.json({ message: 'updated betting lines' })
+		return c.json({ message: "updated betting lines" });
 	} catch (error) {
-		console.error('Error getting betting lines:', error)
-		return c.json({ error: 'Internal Server Error' }, 500)
+		console.error("Error getting betting lines:", error);
+		return c.json({ error: "Internal Server Error" }, 500);
 	}
-})
+});
 
-games.get('/getMediaInformation/hello', async (c) => {
-	const db = c.get('db')
+games.get("/getMediaInformation/hello", async (c) => {
+	const db = c.get("db");
 	try {
-		console.log('getting media')
+		console.log("getting media");
 		const apiMedia = await fetch(
-			'https://api.collegefootballdata.com/games/media?year=2024',
+			"https://api.collegefootballdata.com/games/media?year=2024",
 			{
 				headers: {
 					Authorization: `Bearer ${Bun.env.cfbdata_api_key}`,
 				},
-			}
-		)
-		const media = await apiMedia.json()
+			},
+		);
+		const media = await apiMedia.json();
 		// console.log('media', media)
 
-		for (const game of media) {
-			console.log('game', game)
+		const sortedMedia = media.sort((a, b) => {
+			// if mediaType is web, put it first
+			if (a.mediaType === "web") {
+				return -1;
+			}
+			if (b.mediaType === "web") {
+				return 1;
+			}
+			return 0;
+		});
+
+		for (const game of sortedMedia) {
+			console.log("game", game);
 			await db
 				.update(schema.games)
 				.set({ tvNetwork: game.outlet, mediaType: game.mediaType })
@@ -311,33 +322,33 @@ games.get('/getMediaInformation/hello', async (c) => {
 					and(
 						eq(schema.games.week, game.week),
 						eq(schema.games.homeTeamName, game.homeTeam),
-						eq(schema.games.awayTeamName, game.awayTeam)
-					)
-				)
+						eq(schema.games.awayTeamName, game.awayTeam),
+					),
+				);
 		}
-		return c.json({ message: 'media added to games' })
+		return c.json({ message: "media added to games" });
 	} catch (error) {
-		console.error('Error getting media:', error)
-		return c.json({ error: 'Internal Server Error' }, 500)
+		console.error("Error getting media:", error);
+		return c.json({ error: "Internal Server Error" }, 500);
 	}
-})
+});
 
-games.get('/work/deleteDuplicateGames', async (c) => {
-	const db = c.get('db')
+games.get("/work/deleteDuplicateGames", async (c) => {
+	const db = c.get("db");
 
 	try {
 		// Find duplicate games based on cfbApiId
 		const duplicateGames = await db
 			.select({
 				cfbApiId: schema.games.cfbApiId,
-				count: sql`count(*)`.as('count'),
+				count: sql`count(*)`.as("count"),
 			})
 			.from(schema.games)
 			.groupBy(schema.games.cfbApiId)
 			.having(sql`count(*) > 1`)
-			.execute()
+			.execute();
 
-		console.log('Duplicate games:', duplicateGames)
+		console.log("Duplicate games:", duplicateGames);
 
 		// Delete duplicate games, keeping only one for each cfbApiId
 		for (const game of duplicateGames) {
@@ -346,24 +357,24 @@ games.get('/work/deleteDuplicateGames', async (c) => {
 				.from(schema.games)
 				.where(eq(schema.games.cfbApiId, game.cfbApiId))
 				.orderBy(asc(schema.games.id))
-				.execute()
+				.execute();
 
 			// Keep the first game (with the lowest id) and delete the rest
 			for (let i = 1; i < gamesWithSameId.length; i++) {
 				await db
 					.delete(schema.games)
 					.where(eq(schema.games.id, gamesWithSameId[i].id))
-					.execute()
+					.execute();
 			}
 		}
 
-		console.log('Duplicate games deleted')
+		console.log("Duplicate games deleted");
 
-		return c.json({ message: 'Duplicate games deleted' })
+		return c.json({ message: "Duplicate games deleted" });
 	} catch (error) {
-		console.error('Error deleting duplicate games:', error)
-		return c.json({ error: 'Internal Server Error' }, 500)
+		console.error("Error deleting duplicate games:", error);
+		return c.json({ error: "Internal Server Error" }, 500);
 	}
-})
+});
 
-export default games
+export default games;
