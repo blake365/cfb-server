@@ -3,24 +3,39 @@
 import { Hono } from "hono";
 import * as schema from "../../drizzle/schema";
 import { asc, eq, gte, lte, and, desc } from "drizzle-orm";
+import { getCookie, setCookie } from "hono/cookie";
 
 const interactions = new Hono();
 
-// Function to generate a userId from IP address
-function generateUserId(ip: string) {
-	return Number.parseInt(Bun.hash(ip).toString().slice(0, 16));
+function generateUserId() {
+	return (
+		Math.random().toString(36).substring(2, 15) +
+		Math.random().toString(36).substring(2, 15)
+	);
 }
 
 interactions.post("/:gameId", async (c) => {
-	// console.log('interactions.post')
+	// console.log("interactions.post");
 	const db = c.get("db");
 	const gameId = Number(c.req.param("gameId"));
 	// console.log('gameId', gameId)
 	const { interactionType } = await c.req.json();
-	const ip = c.req.header("x-forwarded-for");
-	const userId = generateUserId(ip);
-	console.log("userId", userId.toString());
-	// console.log('createdAt', schema.interactions.createdAt)
+
+	let userId = getCookie(c, "userId");
+
+	// console.log("userId", userId);
+
+	if (!userId) {
+		userId = generateUserId();
+		setCookie(c, "userId", userId, {
+			secure: true,
+			sameSite: "None",
+			httpOnly: true,
+			maxAge: 60 * 60 * 24 * 30,
+		});
+	}
+
+	// console.log("userId", userId);
 
 	const recentInteractions = await db
 		.select()

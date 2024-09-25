@@ -35,7 +35,7 @@ app.use(logger());
 app.use(
 	"/*",
 	cors({
-		origin: "*",
+		origin: process.env.ORIGINS?.split(",") || [],
 		allowMethods: ["GET", "POST", "PUT", "DELETE"],
 		credentials: true,
 	}),

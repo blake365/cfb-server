@@ -47,13 +47,13 @@ games.put("/:id", async (c) => {
 	return c.json(result);
 });
 
-games.delete("/:id", async (c) => {
-	const db = c.get("db");
-	const result = await db
-		.delete(schema.games)
-		.where(eq(schema.games.id, Number.parseInt(c.req.param("id"))));
-	return c.json(result);
-});
+// games.delete("/:id", async (c) => {
+// 	const db = c.get("db");
+// 	const result = await db
+// 		.delete(schema.games)
+// 		.where(eq(schema.games.id, Number.parseInt(c.req.param("id"))));
+// 	return c.json(result);
+// });
 
 // games.post('/:id/interactions', async (c) => {
 // 	const db = c.get('db')
@@ -121,7 +121,7 @@ games.get("/week/:week", async (c) => {
 	});
 
 	const filteredResults = result.filter((game) => {
-		console.log(game.team_homeTeamId.division, game.team_awayTeamId.division);
+		// console.log(game.team_homeTeamId.division, game.team_awayTeamId.division);
 
 		if (
 			// if neither team is fbs, return false
