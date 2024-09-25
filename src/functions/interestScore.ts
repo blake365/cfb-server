@@ -229,13 +229,13 @@ export const calculateGameInterest = (game) => {
 	const processInteractions = (interactions) => {
 		let interactionScore = 0;
 		for (const interaction of interactions) {
-			if (interaction.interactionType === "Hot") {
+			if (interaction.interactionType === "Starry") {
 				interactionScore += 4;
 			} else if (interaction.interactionType === "Sicko") {
 				interactionScore += 6;
 			} else if (interaction.interactionType === "Curious") {
 				interactionScore += 2;
-			} else if (interaction.interactionType === "Upset Alert") {
+			} else if (interaction.interactionType === "Panic") {
 				interactionScore += 6;
 			} else if (interaction.interactionType === "Snoozer") {
 				interactionScore -= 4;
