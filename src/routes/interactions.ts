@@ -29,9 +29,10 @@ interactions.post("/:gameId", async (c) => {
 		userId = generateUserId();
 		setCookie(c, "userId", userId, {
 			secure: true,
-			sameSite: "None",
+			domain: process.env.NODE_ENV === "production" ? ".cfbsickos.com" : "",
+			sameSite: "strict",
 			httpOnly: true,
-			maxAge: 60 * 60 * 24 * 30,
+			maxAge: 60 * 60,
 		});
 	}
 
