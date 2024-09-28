@@ -73,7 +73,7 @@ scoreboard.post("/scoreboard/hello", async (c) => {
 	const db = c.get("db");
 	const { homeTeam, awayTeam } = await c.req.json();
 
-	console.log(homeTeam, awayTeam);
+	// console.log(homeTeam, awayTeam);
 
 	try {
 		const gameScoreboard = await db.query.scoreboard.findFirst({
@@ -83,7 +83,7 @@ scoreboard.post("/scoreboard/hello", async (c) => {
 			),
 		});
 
-		console.log(gameScoreboard);
+		// console.log(gameScoreboard);
 
 		if (!gameScoreboard) {
 			return c.json({ error: "Game not found" }, { status: 404 });
@@ -173,6 +173,7 @@ scoreboard.post("/scoreboard/hello", async (c) => {
 		return c.json(gameScoreboard);
 	} catch (error) {
 		console.log(error);
+		return c.json({ error: error.message }, { status: 500 });
 	}
 });
 
