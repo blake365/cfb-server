@@ -129,6 +129,11 @@ export const teamstats = pgTable(
 				foreignColumns: [seasons.id],
 				name: "teamstats_season_id_fkey",
 			}),
+			// unique index on teamId and seasonId
+			teamstatsUniqueIndex: uniqueIndex("teamstats_unique_index").on(
+				table.teamId,
+				table.seasonId,
+			),
 		};
 	},
 );

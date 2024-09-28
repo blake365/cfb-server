@@ -85,6 +85,10 @@ scoreboard.post("/scoreboard/hello", async (c) => {
 
 		console.log(gameScoreboard);
 
+		if (!gameScoreboard) {
+			return c.json({ error: "Game not found" }, { status: 404 });
+		}
+
 		if (gameScoreboard?.status === "completed") {
 			await db
 				.update(schema.games)
