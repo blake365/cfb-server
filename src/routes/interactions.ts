@@ -76,6 +76,10 @@ interactions.post("/:gameId", async (c) => {
 			interactionType: interactionType,
 			userId,
 		});
+
+		// console.log("next update interest score");
+		fetch(`${process.env.SERVER_URL}/games/updateInterestScore/${gameId}`);
+
 		return c.json(result);
 	} catch (error) {
 		console.error(error);

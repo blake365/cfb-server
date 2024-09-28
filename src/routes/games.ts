@@ -1,6 +1,7 @@
 import { Hono } from "hono";
 import * as schema from "../../drizzle/schema";
 import { asc, eq, gt, count, desc, or, sql, and } from "drizzle-orm";
+import { calculateGameInterest } from "../functions/interestScore";
 
 const games = new Hono();
 
@@ -377,4 +378,32 @@ games.get("/work/deleteDuplicateGames", async (c) => {
 	}
 });
 
+games.get("/updateInterestScore/:id", async (c) => {
+	console.log("updating interest score");
+	const db = c.get("db");
+	const id = Number.parseInt(c.req.param("id"));
+	try {
+		const game = await db.query.games.findFirst({
+			where: (games, { eq }) => eq(games.id, id),
+			with: {
+				team_homeTeamId: true,
+				team_awayTeamId: true,
+				interactions: true,
+			},
+		});
+		// console.log("prev interestScore", game?.interestScore);
+		const interestScore = calculateGameInterest(game);
+		// console.log("interestScore", interestScore);
+		await db
+			.update(schema.games)
+			.set({ interestScore })
+			.where(eq(schema.games.id, id));
+
+		// console.log("Interest score updated");
+		return c.json({ message: "Interest score updated" });
+	} catch (error) {
+		console.error("Error updating interest score:", error);
+		return c.json({ error: "Internal Server Error" }, 500);
+	}
+});
 export default games;
