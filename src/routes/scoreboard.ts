@@ -116,37 +116,65 @@ scoreboard.post("/scoreboard/hello", async (c) => {
 			const teamStats = await apiTeamStats.json();
 			// console.log(teamStats)
 
-			// Group stats by team using a reducer
 			const groupedStats = teamStats.reduce((acc, stat) => {
 				if (!acc[stat.team]) {
-					acc[stat.team] = {};
+					acc[stat.team] = { teamName: stat.team, seasonId: 1 };
 				}
 				acc[stat.team][stat.statName] = stat.statValue;
 				return acc;
 			}, {});
 
 			// console.log(groupedStats)
+			const upsertData = Object.values(groupedStats);
 
-			for (const team of Object.keys(groupedStats)) {
-				// console.log(team)
-				// console.log(groupedStats[team])
-				const teamId = await db
-					.select({ id: schema.teams.cfbApiId })
-					.from(schema.teams)
-					.where(eq(schema.teams.name, team));
-				// console.log(teamId[0].id);
-				await db
-					.insert(schema.teamstats)
-					.values({
-						teamId: teamId[0].id,
-						seasonId: 1,
-						...groupedStats[team],
-					})
-					.onConflictDoUpdate({
-						target: [schema.teamstats.teamId, schema.teamstats.seasonId],
-						set: groupedStats[team],
-					});
-			}
+			// console.log(teamId[0].id);
+			await db
+				.insert(schema.teamstats)
+				.values(upsertData)
+				.onConflictDoUpdate({
+					target: [schema.teamstats.teamName],
+					set: {
+						seasonId: sql`EXCLUDED.season_id`,
+						completionAttempts: sql`EXCLUDED.completion_attempts`,
+						defensiveTDs: sql`EXCLUDED.defensive_tds`,
+						extraPoints: sql`EXCLUDED.extra_points`,
+						fieldGoalPct: sql`EXCLUDED.field_goal_pct`,
+						fieldGoals: sql`EXCLUDED.field_goals`,
+						firstDowns: sql`EXCLUDED.first_downs`,
+						fourthDownEff: sql`EXCLUDED.fourth_down_eff`,
+						fumblesLost: sql`EXCLUDED.fumbles_lost`,
+						fumblesRecovered: sql`EXCLUDED.fumbles_recovered`,
+						interceptions: sql`EXCLUDED.interceptions`,
+						interceptionTDs: sql`EXCLUDED.interception_tds`,
+						interceptionYards: sql`EXCLUDED.interception_yards`,
+						kickingPoints: sql`EXCLUDED.kicking_points`,
+						kickReturns: sql`EXCLUDED.kick_returns`,
+						kickReturnTDs: sql`EXCLUDED.kick_return_tds`,
+						kickReturnYards: sql`EXCLUDED.kick_return_yards`,
+						netPassingYards: sql`EXCLUDED.net_passing_yards`,
+						passesDeflected: sql`EXCLUDED.passes_deflected`,
+						passesIntercepted: sql`EXCLUDED.passes_intercepted`,
+						passingTDs: sql`EXCLUDED.passing_tds`,
+						possessionTime: sql`EXCLUDED.possession_time`,
+						puntReturns: sql`EXCLUDED.punt_returns`,
+						puntReturnTDs: sql`EXCLUDED.punt_return_tds`,
+						puntReturnYards: sql`EXCLUDED.punt_return_yards`,
+						qbHurries: sql`EXCLUDED.qb_hurries`,
+						rushingAttempts: sql`EXCLUDED.rushing_attempts`,
+						rushingTDs: sql`EXCLUDED.rushing_tds`,
+						rushingYards: sql`EXCLUDED.rushing_yards`,
+						sacks: sql`EXCLUDED.sacks`,
+						tackles: sql`EXCLUDED.tackles`,
+						tacklesForLoss: sql`EXCLUDED.tackles_for_loss`,
+						thirdDownEff: sql`EXCLUDED.third_down_eff`,
+						totalFumbles: sql`EXCLUDED.total_fumbles`,
+						totalPenaltiesYards: sql`EXCLUDED.total_penalties_yards`,
+						totalYards: sql`EXCLUDED.total_yards`,
+						turnovers: sql`EXCLUDED.turnovers`,
+						yardsPerPass: sql`EXCLUDED.yards_per_pass`,
+						yardsPerRushAttempt: sql`EXCLUDED.yards_per_rush_attempt`,
+					},
+				});
 
 			await db
 				.update(schema.teams)
