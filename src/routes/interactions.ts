@@ -2,7 +2,7 @@
 
 import { Hono } from "hono";
 import * as schema from "../../drizzle/schema";
-import { asc, eq, gte, lte, and, desc } from "drizzle-orm";
+import { eq, and, desc } from "drizzle-orm";
 import { getCookie, setCookie } from "hono/cookie";
 
 const interactions = new Hono();
