@@ -2,6 +2,7 @@ import { Hono } from "hono";
 import * as schema from "../../drizzle/schema";
 import { asc, or, eq, sql } from "drizzle-orm";
 import weeks from "../../lib/weeks";
+import { collegeFootballRivalries } from "../../lib/cfb-rivalries-json-3";
 
 const teams = new Hono();
 
@@ -462,6 +463,32 @@ teams.get("/newGamesFromApi/hello", async (c) => {
 		return c.json({ message: "Games added" });
 	} catch (error) {
 		console.error("Error in newTeamsFromApi:", error);
+		return c.json({ error: error.message }, { status: 500 });
+	}
+});
+
+teams.get("/updateRivalries/hello", async (c) => {
+	const db = c.get("db");
+	try {
+		console.log("Updating rivalries");
+		const rivalries = collegeFootballRivalries;
+		// console.log(rivalries);
+
+		for (const [key, value] of Object.entries(rivalries)) {
+			console.log(key, value);
+
+			// get the team based on the key
+			await db
+				.update(schema.teams)
+				.set({
+					rivals: value,
+				})
+				.where(eq(schema.teams.name, key));
+		}
+
+		return c.json({ message: "Rivalries updated" });
+	} catch (error) {
+		console.error("Error in updateRivalries:", error);
 		return c.json({ error: error.message }, { status: 500 });
 	}
 });

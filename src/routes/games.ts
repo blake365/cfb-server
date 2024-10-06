@@ -384,6 +384,53 @@ games.get("/work/deleteDuplicateGames", async (c) => {
 	}
 });
 
+games.get("/work/updateRivalries", async (c) => {
+	const db = c.get("db");
+
+	try {
+		// get the games and the teams, check if the away team is in the home team's rivals
+		const games = await db.query.games.findMany({
+			with: {
+				team_homeTeamId: true,
+				team_awayTeamId: true,
+			},
+		});
+
+		for (const game of games) {
+			const homeTeam = game.team_homeTeamId;
+			const awayTeam = game.team_awayTeamId;
+
+			console.log("homeTeam", homeTeam.name);
+			console.log("awayTeam", awayTeam.name);
+			console.log("rivalries", homeTeam.rivals);
+
+			if (homeTeam.rivals.includes(awayTeam.name)) {
+				console.log("away team is in the home team's rivals");
+
+				await db
+					.update(schema.games)
+					.set({
+						rivalry: true,
+					})
+					.where(eq(schema.games.id, game.id));
+			} else {
+				console.log("away team is not in the home team's rivals");
+				await db
+					.update(schema.games)
+					.set({
+						rivalry: false,
+					})
+					.where(eq(schema.games.id, game.id));
+			}
+		}
+
+		return c.json({ message: "Game rivalries updated" });
+	} catch (error) {
+		console.error("Error updating game rivalries:", error);
+		return c.json({ error: "Internal Server Error" }, 500);
+	}
+});
+
 games.get("/updateInterestScore/:id", async (c) => {
 	console.log("updating interest score");
 	const db = c.get("db");
