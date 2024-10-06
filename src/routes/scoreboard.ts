@@ -123,22 +123,18 @@ scoreboard.post("/scoreboard/hello", async (c) => {
 
 				const teamStats = await apiTeamStats.json();
 				// console.log(teamStats)
-			} catch (error) {
-				console.log("error fetching team stats", error);
-			}
 
-			const groupedStats = teamStats.reduce((acc, stat) => {
-				if (!acc[stat.team]) {
-					acc[stat.team] = { teamName: stat.team, seasonId: 1 };
-				}
-				acc[stat.team][stat.statName] = stat.statValue;
-				return acc;
-			}, {});
+				const groupedStats = teamStats.reduce((acc, stat) => {
+					if (!acc[stat.team]) {
+						acc[stat.team] = { teamName: stat.team, seasonId: 1 };
+					}
+					acc[stat.team][stat.statName] = stat.statValue;
+					return acc;
+				}, {});
 
-			// console.log(groupedStats)
-			const upsertData = Object.values(groupedStats);
+				// console.log(groupedStats)
+				const upsertData = Object.values(groupedStats);
 
-			try {
 				// console.log(teamId[0].id);
 				await db
 					.insert(schema.teamstats)
