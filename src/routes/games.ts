@@ -301,7 +301,7 @@ games.get("/getMediaInformation/hello", async (c) => {
 			},
 		);
 		const media = await apiMedia.json();
-		// console.log('media', media)
+		// console.log("media", media);
 
 		const sortedMedia = media.sort((a, b) => {
 			// if mediaType is web, put it first
@@ -315,10 +315,16 @@ games.get("/getMediaInformation/hello", async (c) => {
 		});
 
 		for (const game of sortedMedia) {
-			console.log("game", game);
+			// console.log("game", game);
+			// console.log("startTime", game.startTime);
+			// console.log("new Date(game.startTime)", new Date(game.startTime));
 			await db
 				.update(schema.games)
-				.set({ tvNetwork: game.outlet, mediaType: game.mediaType })
+				.set({
+					tvNetwork: game.outlet,
+					mediaType: game.mediaType,
+					gameStart: game.startTime,
+				})
 				.where(
 					and(
 						eq(schema.games.week, game.week),
