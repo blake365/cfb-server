@@ -38,7 +38,7 @@ export const calculateGameInterest = (game) => {
 	}
 
 	// 3. Rivalry Game (0-15 points)
-	score += game.rivalry ? 15 : 0;
+	score += game.rivalry ? 10 : 0;
 
 	// 4. Team Records (0-10 points)
 	const homeUndefeated = game.team_homeTeamId.losses === 0;
@@ -91,14 +91,14 @@ export const calculateGameInterest = (game) => {
 	// }
 
 	// 9. Time Slot (0-5 points)
-	const gameHour = new Date(game.gameStart).getHours();
-	if (gameHour >= 19) {
-		score += 5;
-	} else if (gameHour >= 12) {
-		score += 3;
-	} else {
-		score += 1;
-	}
+	// const gameHour = new Date(game.gameStart).getHours();
+	// if (gameHour >= 19) {
+	// 	score += 5;
+	// } else if (gameHour >= 12) {
+	// 	score += 3;
+	// } else {
+	// 	score += 1;
+	// }
 
 	const processInteractions = (interactions) => {
 		let interactionScore = 0;
