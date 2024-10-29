@@ -1,6 +1,6 @@
 import { Hono } from "hono";
 import * as schema from "../../drizzle/schema";
-import { eq, desc } from "drizzle-orm";
+import { eq, desc, asc } from "drizzle-orm";
 
 const conferences = new Hono();
 
@@ -31,7 +31,7 @@ conferences.get("/:slug", async (c) => {
 		where: (conferences, { eq }) => eq(conferences.name, c.req.param("slug")),
 		with: {
 			teams: {
-				orderBy: (teams, { asc }) => [asc(teams.conferenceWins)],
+				orderBy: (teams, { desc }) => [desc(teams.conferenceWins)],
 			},
 		},
 	});
