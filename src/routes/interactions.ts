@@ -29,7 +29,7 @@ interactions.post("/:gameId", async (c) => {
 		userId = generateUserId();
 		setCookie(c, "userId", userId, {
 			secure: true,
-			domain: process.env.NODE_ENV === "production" ? ".cfbsickos.com" : "",
+			domain: Bun.env.NODE_ENV === "production" ? ".cfbsickos.com" : "",
 			sameSite: "strict",
 			httpOnly: true,
 			maxAge: 60 * 60,
@@ -78,7 +78,7 @@ interactions.post("/:gameId", async (c) => {
 		});
 
 		// console.log("next update interest score");
-		fetch(`${process.env.SERVER_URL}/games/updateInterestScore/${gameId}`);
+		fetch(`${Bun.env.SERVER_URL}/games/updateInterestScore/${gameId}`);
 
 		return c.json(result);
 	} catch (error) {
