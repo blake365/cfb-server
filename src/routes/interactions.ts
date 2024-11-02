@@ -77,8 +77,19 @@ interactions.post("/:gameId", async (c) => {
 			userId,
 		});
 
-		// console.log("next update interest score");
-		fetch(`${Bun.env.SERVER_URL}/games/updateInterestScore/${gameId}`);
+		console.log("next update interest score");
+		try {
+			const response = await fetch(
+				`${Bun.env.SERVER_URL}/games/updateInterestScore/${gameId}`,
+			);
+			if (!response.ok) {
+				console.error(
+					`Failed to update interest score: ${response.status} ${response.statusText}`,
+				);
+			}
+		} catch (fetchError) {
+			console.error("Error updating interest score:", fetchError);
+		}
 
 		return c.json(result);
 	} catch (error) {
