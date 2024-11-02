@@ -23,19 +23,34 @@ scoreboard.get("/fillScoreboard", async (c) => {
 			// console.log(game)
 			if (game.status === "completed") {
 				console.log("handling game completion");
+				// console.log(game);
+				// console.log(game.homeTeamId, game.awayTeamId);
 
 				try {
+					const existingGame = await db.query.games.findFirst({
+						where: and(
+							eq(schema.games.homeTeamId, game.homeTeam.id),
+							eq(schema.games.awayTeamId, game.awayTeam.id),
+							eq(schema.games.gameCompleted, true),
+						),
+					});
+
+					if (existingGame) {
+						console.log("Game already processed, skipping...");
+						continue;
+					}
+
 					await db
 						.update(schema.games)
 						.set({
 							gameCompleted: true,
-							homeTeamScore: game.homeTeamPoints,
-							awayTeamScore: game.awayTeamPoints,
+							homeTeamScore: game.homeTeam.points,
+							awayTeamScore: game.awayTeam.points,
 						})
 						.where(
 							and(
-								eq(schema.games.homeTeamId, game.homeTeamId),
-								eq(schema.games.awayTeamId, game.awayTeamId),
+								eq(schema.games.homeTeamId, game.homeTeam.id),
+								eq(schema.games.awayTeamId, game.awayTeam.id),
 							),
 						);
 				} catch (error) {
