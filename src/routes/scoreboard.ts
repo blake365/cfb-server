@@ -142,7 +142,7 @@ scoreboard.get("/fillScoreboard", async (c) => {
 							gamesLost: sql`${schema.teams.losses} + ${game.homeTeamPoints < game.awayTeamPoints ? 1 : 0}`,
 							gamesTied: sql`${schema.teams.ties} + ${game.homeTeamPoints === game.awayTeamPoints ? 1 : 0}`,
 						})
-						.where(eq(schema.teams.id, game.homeTeamId));
+						.where(eq(schema.teams.id, game.homeTeam.id));
 				} catch (error) {
 					console.log("error updating home team stats", error);
 				}
@@ -156,7 +156,7 @@ scoreboard.get("/fillScoreboard", async (c) => {
 							gamesLost: sql`${schema.teams.losses} + ${game.homeTeamPoints > game.awayTeamPoints ? 1 : 0}`,
 							gamesTied: sql`${schema.teams.ties} + ${game.homeTeamPoints === game.awayTeamPoints ? 1 : 0}`,
 						})
-						.where(eq(schema.teams.id, game.awayTeamId));
+						.where(eq(schema.teams.id, game.awayTeam.id));
 				} catch (error) {
 					console.log("error updating away team stats", error);
 				}
